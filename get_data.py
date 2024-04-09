@@ -1,7 +1,6 @@
 import glob
 import os
 import datetime
-from collections import defaultdict
 
 import networkx as nx
 
@@ -58,7 +57,7 @@ def get_infectious():
         graph = snapshots[interval_index]
 
         for u, v, data in G.edges(data=True):
-                graph.add_edge(u, v, weight=data.get('weight', 1))
+            graph.add_edge(u, v, weight=data.get('weight', 1))
 
     # Convert the dictionary to a sorted list of graphs by interval index
     return [snapshots[key] for key in sorted(snapshots)]
@@ -82,9 +81,9 @@ def get_SFHH():
 # Format: (19, 18, {'timestamp': 1225677828, 'weight': 32767})
 # Non aggregated, 2008-09-05 - 2009-06-29 (298 days), weight is number of seconds per call
 # removed records with unknown caller or callee
-def get_calls():
-    G = nx.MultiGraph(name="Calls graph")
-    filepath = "data/Calls.csv"
+def get_socio_calls():
+    G = nx.MultiGraph(name="Socio-calls graph")
+    filepath = "data/Calls.dat"
 
     def unix_from_str(s):
         return int(datetime.datetime.strptime(s, "%Y-%m-%d %H:%M:%S").timestamp())
@@ -96,6 +95,26 @@ def get_calls():
             if node1 == "" or node2 == "":
                 continue
             G.add_edge(int(node1), int(node2[1:-1]), timestamp=unix_from_str(timestamp), weight=int(weight))
+    return G
+
+
+# Format: (19, 18, {'timestamp': 1225677828})
+# Non aggregated, 2008-09-05 - 2009-06-29 (298 days), weight is number of seconds per call
+# removed records with unknown caller or callee
+def get_socio_sms():
+    G = nx.MultiGraph(name="Socio-sms graph")
+    filepath = "data/SMS.dat"
+
+    def unix_from_str(s):
+        return int(datetime.datetime.strptime(s, "%Y-%m-%d %H:%M:%S").timestamp())
+
+    with open(filepath, 'r') as file:
+        for line in file:
+            parts = line.strip().split(sep=',')  # Split each line into parts
+            node1, timestamp, _, node2 = parts[0], parts[1], parts[2], parts[3]
+            if node1 == "" or node2 == "":
+                continue
+            G.add_edge(int(node1), int(node2), timestamp=unix_from_str(timestamp))
     return G
 
 
