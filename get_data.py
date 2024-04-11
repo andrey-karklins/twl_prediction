@@ -13,7 +13,7 @@ D = H * 24  # 1 day in seconds
 # Non aggregated, 2009-06-29 - 2009-07-01 (3 days)
 def get_hypertext():
     G = nx.MultiGraph(name="Hypertext graph")  # Initialize an empty MultiGraph
-    with open("data/hypertext.dat", "r") as file:
+    with open("data/Hypertext.dat", "r") as file:
         for line in file:
             node1, node2, _, timestamp = line.strip().split()  # Adjust split method based on your file's delimiter
             G.add_edge(int(node1), int(node2), timestamp=int(timestamp))
@@ -24,7 +24,7 @@ def get_hypertext():
 # Non aggregated, 193 days in total
 def get_college():
     G = nx.MultiGraph(name="College graph")  # Initialize an empty MultiGraph
-    with open("data/CollegeMsg.txt", "r") as file:
+    with open("data/CollegeMsg.dat", "r") as file:
         for line in file:
             node1, node2, timestamp = line.strip().split()  # Adjust split method based on your file's delimiter
             G.add_edge(int(node1), int(node2), timestamp=int(timestamp))
@@ -99,8 +99,8 @@ def get_socio_calls():
 
 
 # Format: (19, 18, {'timestamp': 1225677828})
-# Non aggregated, 2008-09-05 - 2009-06-29 (298 days), weight is number of seconds per call
-# removed records with unknown caller or callee
+# Non aggregated, 2008-01-01 - 2009-06-27 (543 days)
+# removed records with unknown recipient
 def get_socio_sms():
     G = nx.MultiGraph(name="Socio-sms graph")
     filepath = "data/SMS.dat"
