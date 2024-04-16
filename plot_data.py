@@ -1,62 +1,12 @@
 from collections import Counter, defaultdict
-from datetime import datetime
+from get_data import *
 
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-
-import get_data
 
 M = 60  # 1 minute in seconds
 H = M * 60  # 1 hour in seconds
 D = H * 24  # 1 day in seconds
-
-
-def plot_graph_density(G, title, bin_size='1h'):
-    # Extract timestamp and connections count
-    data = [(data['timestamp'], 1) for _, _, data in G.edges(data=True)]
-    df = pd.DataFrame(data, columns=['timestamp', 'connections'])
-
-    # Convert UNIX timestamp to datetime
-    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
-
-    # Group data into bins based on bin_size
-    df.set_index('timestamp', inplace=True)
-    df = df.resample(bin_size).sum().reset_index()
-
-    # Plotting
-    plt.figure(figsize=(10, 6))
-    plt.plot(df['timestamp'], df['connections'], marker='o', linestyle='-')
-
-    # Dynamically adjust the number of labels based on the date range and desired density
-    date_range = df['timestamp'].max() - df['timestamp'].min()
-    max_labels = 10  # Maximum number of labels you want to show on the x-axis
-
-    if bin_size.endswith('min'):  # Minutes
-        interval = max(1, int(date_range.total_seconds() / 60 / max_labels))
-        locator = mdates.MinuteLocator(interval=interval)
-        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
-    elif bin_size.endswith('h'):  # Hours
-        interval = max(1, int(date_range.total_seconds() / 3600 / max_labels))
-        locator = mdates.HourLocator(interval=interval)
-        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H'))
-    elif bin_size.endswith('D'):  # Days
-        interval = max(1, int(date_range.days / max_labels))
-        locator = mdates.DayLocator(interval=interval)
-        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-    else:
-        locator = mdates.AutoDateLocator(minticks=3,
-                                         maxticks=max_labels)  # Fallback for unspecified or complex intervals
-
-    plt.gca().xaxis.set_major_locator(locator)
-    plt.gcf().autofmt_xdate()  # Rotate date labels
-
-    plt.title(title)
-    plt.xlabel('Time')
-    plt.ylabel('Number of Connections')
-    plt.tight_layout()
-    plt.show()
-
 
 def plot_graph_density_aggregated(snapshots, title):
     snapshots = sorted(snapshots, key=lambda g: g.graph['t'])
@@ -88,7 +38,6 @@ def print_graph_properties(G, plot_bin_size='1h'):
     avg_interactions_per_pair = sum(interactions.values()) / unique_interactions
     print(f"Total number of unique interactions: {unique_interactions}")
     print(f"Average number of recurrent interactions: {avg_interactions_per_pair:.2f}")
-    plot_graph_density(G, G.name, bin_size=plot_bin_size)
 
 
 def print_graph_properties_aggregated(snapshots):
@@ -114,19 +63,16 @@ def print_graph_properties_aggregated(snapshots):
 
 # Example usage
 plt.close('all')
-print_graph_properties(get_data.get_hypertext(), plot_bin_size='1h')
-print_graph_properties_aggregated(get_data.aggregate_into_snapshots(get_data.get_hypertext(), delta_t=H))
+print_graph_properties_aggregated(aggregate_into_snapshots(get_hypertext(), delta_t=H))
 print('########################################################################################')
-print_graph_properties(get_data.get_college(), plot_bin_size='1D')
-print_graph_properties_aggregated(get_data.aggregate_into_snapshots(get_data.get_college(), delta_t=D))
+print_graph_properties_aggregated(aggregate_into_snapshots(get_college_1(), delta_t=1*D))
 print('########################################################################################')
-print_graph_properties(get_data.get_SFHH(), plot_bin_size='30min')
-print_graph_properties_aggregated(get_data.aggregate_into_snapshots(get_data.get_SFHH(), delta_t=30 * M))
+print_graph_properties_aggregated(aggregate_into_snapshots(get_college_2(), delta_t=1*D))
 print('########################################################################################')
-print_graph_properties(get_data.get_socio_calls(), plot_bin_size='1D')
-print_graph_properties_aggregated(get_data.aggregate_into_snapshots(get_data.get_socio_calls(), delta_t=7 * D))
+print_graph_properties_aggregated(aggregate_into_snapshots(get_SFHH(), delta_t=30 * M))
 print('########################################################################################')
-print_graph_properties(get_data.get_socio_sms(), plot_bin_size='1D')
-print_graph_properties_aggregated(get_data.aggregate_into_snapshots(get_data.get_socio_sms(), delta_t=7 * D))
+print_graph_properties_aggregated(aggregate_into_snapshots(get_socio_calls(), delta_t=7 * D))
 print('########################################################################################')
-print_graph_properties_aggregated(get_data.get_infectious())
+print_graph_properties_aggregated(aggregate_into_snapshots(get_socio_sms(), delta_t=7 * D))
+print('########################################################################################')
+print_graph_properties_aggregated(get_infectious())

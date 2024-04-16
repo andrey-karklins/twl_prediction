@@ -20,13 +20,28 @@ def get_hypertext():
     return G
 
 
-# Format: (1, 2, {'timestamp': 1082040961})
-# Non aggregated, 193 days in total
-def get_college():
-    G = nx.MultiGraph(name="College graph")  # Initialize an empty MultiGraph
+# 2004-06-20 00:00:00
+college_split = 1087660800
+
+
+def get_college_1():
+    G = nx.MultiGraph(name="College graph 1")  # Initialize an empty MultiGraph
     with open("data/CollegeMsg.dat", "r") as file:
         for line in file:
             node1, node2, timestamp = line.strip().split()  # Adjust split method based on your file's delimiter
+            if int(timestamp) > college_split:
+                break
+            G.add_edge(int(node1), int(node2), timestamp=int(timestamp))
+    return G
+
+
+def get_college_2():
+    G = nx.MultiGraph(name="College graph 2")  # Initialize an empty MultiGraph
+    with open("data/CollegeMsg.dat", "r") as file:
+        for line in file:
+            node1, node2, timestamp = line.strip().split()  # Adjust split method based on your file's delimiter
+            if int(timestamp) < college_split:
+                continue
             G.add_edge(int(node1), int(node2), timestamp=int(timestamp))
     return G
 
