@@ -1,9 +1,4 @@
-Name,△t,n_snapshots,avg_edges,avg_interactions,std_interactions,avg_min_weight,avg_weight,avg_max_weight,std_weight,weight_variation_coeff
-Hypertext graph,300,433,17.21,48.08,49.01,1.58,3.42,9.35,2.59,0.76
-Hypertext graph,600,223,28.13,93.35,94.02,1.8,4.35,16.3,4.71,1.08
-Hypertext graph,1200,118,46.65,176.42,171.34,2.0,5.09,27.25,7.91,1.55
-Hypertext graph,2400,63,78.84,330.44,302.13,1.0,4.88,44.67,7.15,1.47
-SFHH graph,300,249,83.34,282.17,287.09,1.06,3.75,13.4,1.22,0.33
-SFHH graph,600,128,134.72,548.91,566.18,1.04,4.67,25.09,1.81,0.39
-SFHH graph,1200,65,230.72,1080.94,1090.43,1.0,5.48,46.57,2.09,0.38
-Infectious,86400,69,674.84,6327.51,3018.78,1.0,11.0,170.74,3.29,0.3
+Name,△t,n,mu_edges,mu_inter,mu_min_w,mu_w,mu_max_w
+Hypertext graph,1200,118,46.65,176.42,2.0,5.09,27.25
+SFHH graph,600,128,134.72,548.91,1.04,4.67,25.09
+Infectious,86400,69,674.84,6327.51,1.0,11.0,170.74

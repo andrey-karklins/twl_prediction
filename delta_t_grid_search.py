@@ -42,15 +42,15 @@ def get_aggregated_properties(snapshots):
     avg_max_weight = np.mean(max_weights)
 
     return {
-        "n_snapshots": num_snapshots,
-        "avg_edges": round(avg_edges_per_snapshot, 2),
-        "avg_interactions": round(avg_interactions_per_snapshot, 2),
-        "std_interactions": round(std_interactions_per_snapshot, 2),
-        "avg_min_weight": round(avg_min_weight, 2),
-        "avg_weight": round(avg_weight_per_snapshot, 2),
-        "avg_max_weight": round(avg_max_weight, 2),
-        "std_weight": round(std_weight_per_snapshot, 2),
-        "weight_variation_coeff": round(std_weight_per_snapshot/avg_weight_per_snapshot, 2)
+        "n": num_snapshots,
+        "mu_edges": round(avg_edges_per_snapshot, 2),
+        "mu_inter": round(avg_interactions_per_snapshot, 2),
+        # "std_inter": round(std_interactions_per_snapshot, 2),
+        "mu_min_w": round(avg_min_weight, 2),
+        "mu_w": round(avg_weight_per_snapshot, 2),
+        "mu_max_w": round(avg_max_weight, 2),
+        # "std_w": round(std_weight_per_snapshot, 2),
+        # "var_coef_w": round(std_weight_per_snapshot/avg_weight_per_snapshot, 2)
     }
 
 

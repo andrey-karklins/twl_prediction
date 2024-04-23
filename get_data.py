@@ -20,11 +20,18 @@ def get_hypertext():
     return G
 
 
-# 2004-06-20 00:00:00
-college_split = 1087660800
+def get_college():
+    G = nx.MultiGraph(name="College graph original")  # Initialize an empty MultiGraph
+    with open("data/CollegeMsg.dat", "r") as file:
+        for line in file:
+            node1, node2, timestamp = line.strip().split()  # Adjust split method based on your file's delimiter
+            G.add_edge(int(node1), int(node2), timestamp=int(timestamp))
+    return G
 
 
 def get_college_1():
+    # 2004-06-20 00:00:00
+    college_split = 1087660800
     G = nx.MultiGraph(name="College graph 1")  # Initialize an empty MultiGraph
     with open("data/CollegeMsg.dat", "r") as file:
         for line in file:
@@ -36,6 +43,8 @@ def get_college_1():
 
 
 def get_college_2():
+    # 2004-06-20 00:00:00
+    college_split = 1087660800
     G = nx.MultiGraph(name="College graph 2")  # Initialize an empty MultiGraph
     with open("data/CollegeMsg.dat", "r") as file:
         for line in file:
@@ -113,11 +122,8 @@ def get_socio_calls():
     return G
 
 
-# Format: (19, 18, {'timestamp': 1225677828})
-# Non aggregated, 2008-01-01 - 2009-06-27 (543 days)
-# removed records with unknown recipient
-def get_socio_sms():
-    G = nx.MultiGraph(name="Socio-sms graph")
+def get_socio_sms_original():
+    G = nx.MultiGraph(name="Socio-sms graph original")
     filepath = "data/SMS.dat"
 
     def unix_from_str(s):
@@ -128,6 +134,33 @@ def get_socio_sms():
             parts = line.strip().split(sep=',')  # Split each line into parts
             node1, timestamp, _, node2 = parts[0], parts[1], parts[2], parts[3]
             if node1 == "" or node2 == "":
+                continue
+            G.add_edge(int(node1), int(node2), timestamp=unix_from_str(timestamp))
+    return G
+
+
+# Format: (19, 18, {'timestamp': 1225677828})
+# Non aggregated, 2008-01-01 - 2009-06-27 (543 days)
+# removed records with unknown recipient
+def get_socio_sms():
+    G = nx.MultiGraph(name="Socio-sms graph")
+    filepath = "data/SMS.dat"
+
+    # 2008-09-01 00:00:00
+    socio_sms_start = 1220227200
+    # 2009-04-01 00:00:00
+    socio_sms_end = 1238534400
+
+    def unix_from_str(s):
+        return int(datetime.datetime.strptime(s, "%Y-%m-%d %H:%M:%S").timestamp())
+
+    with open(filepath, 'r') as file:
+        for line in file:
+            parts = line.strip().split(sep=',')  # Split each line into parts
+            node1, timestamp, _, node2 = parts[0], parts[1], parts[2], parts[3]
+            if node1 == "" or node2 == "":
+                continue
+            if unix_from_str(timestamp) < socio_sms_start or unix_from_str(timestamp) > socio_sms_end:
                 continue
             G.add_edge(int(node1), int(node2), timestamp=unix_from_str(timestamp))
     return G
