@@ -6,6 +6,18 @@ M = 60  # 1 minute in seconds
 H = M * 60  # 1 hour in seconds
 D = H * 24  # 1 day in seconds
 
+datasets = [(get_data.get_hypertext(), 20 * M),
+            (get_data.get_SFHH(), 10 * M),
+            (get_data.get_infectious(), None),
+            (get_data.get_college_1(), D),
+            (get_data.get_college_2(), 2 * D),
+            (get_data.get_socio_calls(), 2 * D),
+            (get_data.get_socio_sms(), 6 * H),
+            ]
+
+datasets = list(map(lambda x: (get_data.aggregate_into_snapshots(x[0], delta_t=x[1]), x[0].name) if
+x[1] is not None else x[0], datasets))
+
 
 def extract_network_features(snapshots):
     """
