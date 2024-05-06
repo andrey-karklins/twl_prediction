@@ -7,16 +7,15 @@ M = 60  # 1 minute in seconds
 H = M * 60  # 1 hour in seconds
 D = H * 24  # 1 day in seconds
 
-delta_ts_physical = [5 * M, 10 * M, 20 * M, 40 * M, 1 * H, 2 * H, 3 * H, 1 * D]
-delta_ts_virtual = [3 * H, 6 * H, 12 * H, 1 * D, 2 * D, 3 * D, 7 * D, 14 * D]
+delta_ts_physical = [10 * M, 20 * M, 40 * M, 1 * H]
+delta_ts_virtual = [12 * H, 1 * D, 3 * D, 7 * D]
 datasets_physical = [get_hypertext(), get_SFHH()]
 datasets_virtual = [get_college_1(), get_college_2(), get_socio_calls(), get_socio_sms()]
 
 
-def get_aggregated_properties(snapshots):
+def get_aggregated_properties(snapshots, links):
     num_snapshots = len(snapshots)
-
-    # Compute the number of interactions and total weight per snapshot
+    all_edges = len(links)
     edges_per_snapshot = [len(g.edges()) for g in snapshots]
     interactions_per_snapshot = [sum(data['weight'] for _, _, data in g.edges(data=True)) for g in snapshots]
     weights_per_snapshot = [sum(data['weight'] for _, _, data in g.edges(data=True)) / edges_per_snapshot[i] for i, g in
@@ -33,22 +32,27 @@ def get_aggregated_properties(snapshots):
             max_weights.append(max(snapshot_weights))
 
     # Calculate averages and standard deviations
-    avg_edges_per_snapshot = np.mean(edges_per_snapshot)
-    avg_interactions_per_snapshot = np.mean(interactions_per_snapshot)
-    std_interactions_per_snapshot = np.std(interactions_per_snapshot)
-    avg_weight_per_snapshot = np.mean(weights_per_snapshot)
-    std_weight_per_snapshot = np.std(weights_per_snapshot)
-    avg_min_weight = np.mean(min_weights)
-    avg_max_weight = np.mean(max_weights)
+    all_interactions = sum(interactions_per_snapshot)
+    avg_edges_per_snapshot = np.mean([edges / all_edges for edges in edges_per_snapshot])
+    std_edges_per_snapshot = np.std([edges / all_edges for edges in edges_per_snapshot])
+    avg_interactions_per_snapshot = np.mean([interactions / all_interactions for interactions in interactions_per_snapshot])
+    std_interactions_per_snapshot = np.std([interactions / all_interactions for interactions in interactions_per_snapshot])
+    min_interactions = min(interactions_per_snapshot)/all_interactions
+    max_interactions = max(interactions_per_snapshot)/all_interactions
 
     return {
         "n": num_snapshots,
-        "mu_edges": round(avg_edges_per_snapshot, 2),
-        "mu_inter": round(avg_interactions_per_snapshot, 2),
-        # "std_inter": round(std_interactions_per_snapshot, 2),
-        "mu_min_w": round(avg_min_weight, 2),
-        "mu_w": round(avg_weight_per_snapshot, 2),
-        "mu_max_w": round(avg_max_weight, 2),
+        "total_links": all_edges,
+        "total_interaction": all_interactions,
+        "mu_links": round(avg_edges_per_snapshot * 100, 2),
+        "std_links": round(std_edges_per_snapshot * 100, 2),
+        "mu_contacts": round(avg_interactions_per_snapshot * 100, 2),
+        "std_contacts": round(std_interactions_per_snapshot * 100, 2),
+        "min_contacts": round(min_interactions * 100, 8),
+        "max_contacts": round(max_interactions * 100, 2),
+        # "mu_min_w": round(avg_min_weight, 2),
+        # "mu_w": round(avg_weight_per_snapshot, 2),
+        # "mu_max_w": round(avg_max_weight, 2),
         # "std_w": round(std_weight_per_snapshot, 2),
         # "var_coef_w": round(std_weight_per_snapshot/avg_weight_per_snapshot, 2)
     }
@@ -57,20 +61,19 @@ def get_aggregated_properties(snapshots):
 def grid_search(datasets, delta_ts):
     results = []
     for dataset in datasets:
+        links = set([(u, v) for (u, v) in dataset.edges()])
         for delta_t in delta_ts:
             data = aggregate_into_snapshots(dataset, delta_t=delta_t)
-            if len(data) < 50:
-                break
             result = {'Name': dataset.name, '△t': delta_t}
-            result = result | get_aggregated_properties(data)
+            result = result | get_aggregated_properties(data, links)
             results.append(result)
     return results
 
 
 res = grid_search(datasets_physical, delta_ts_physical)
-infect = {'Name': "Infectious", '△t': 1 * D}
-infect = infect | get_aggregated_properties(get_infectious())
-res.append(infect)
+# infect = {'Name': "Infectious", '△t': 1 * D}
+# infect = infect | get_aggregated_properties(get_infectious())
+# res.append(infect)
 df = pd.DataFrame(res)
 df.to_csv('grid_search_physical.csv', index=False)
 

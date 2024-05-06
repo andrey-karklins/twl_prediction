@@ -81,7 +81,7 @@ def get_infectious():
         graph = snapshots[interval_index]
 
         for u, v, data in G.edges(data=True):
-            graph.add_edge(u, v, weight=data.get('weight', 1))
+            graph.add_edge(int(u), int(v), weight=data["weight"])
 
     # Convert the dictionary to a sorted list of graphs by interval index
     return [snapshots[key] for key in sorted(snapshots)]
@@ -98,7 +98,7 @@ def get_SFHH():
         for line in file:
             parts = line.strip().split()  # Split each line into parts
             timestamp, node1, node2 = int(parts[0]), parts[1], parts[2]
-            G.add_edge(node1, node2, timestamp=timestamp + 1244066400)
+            G.add_edge(int(node1), int(node2), timestamp=timestamp + 1244066400)
     return G
 
 
@@ -115,10 +115,10 @@ def get_socio_calls():
     with open(filepath, 'r') as file:
         for line in file:
             parts = line.strip().split(sep=',')  # Split each line into parts
-            node1, timestamp, weight, node2 = parts[0], parts[1], parts[2], parts[3]
+            node1, timestamp, weight, node2 = parts[0], parts[1], parts[2], parts[3].replace("\"", "")
             if node1 == "" or node2 == "":
                 continue
-            G.add_edge(int(node1), int(node2[1:-1]), timestamp=unix_from_str(timestamp), weight=int(weight))
+            G.add_edge(int(node1), int(node2), timestamp=unix_from_str(timestamp), weight=int(weight))
     return G
 
 

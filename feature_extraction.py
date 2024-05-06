@@ -18,7 +18,8 @@ datasets = [(get_data.get_hypertext(), 20 * M),
 datasets = list(map(lambda x: (get_data.aggregate_into_snapshots(x[0], delta_t=x[1]), x[0].name) if
 x[1] is not None else x[0], datasets))
 
-
+for dataset in datasets:
+    print(get_data.get_aggregated_properties(dataset))
 def extract_network_features(snapshots):
     """
     Extracts an expanded set of network features for each snapshot in the array of nx.Graph() objects.
