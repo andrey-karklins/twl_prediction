@@ -8,7 +8,9 @@ H = M * 60  # 1 hour in seconds
 D = H * 24  # 1 day in seconds
 
 delta_ts_physical = [10 * M, 20 * M, 40 * M, 1 * H]
+delta_t_step__physical = [10 * M, 20 * M, 40 * M, 1 * H]
 delta_ts_virtual = [12 * H, 1 * D, 3 * D, 7 * D]
+delta_t_step_virtual = [12 * H, 1 * D, 3 * D, 7 * D]
 datasets_physical = [get_hypertext(), get_SFHH()]
 datasets_virtual = [get_college_1(), get_college_2(), get_socio_calls(), get_socio_sms()]
 
@@ -37,19 +39,17 @@ def get_aggregated_properties(snapshots, links):
     std_edges_per_snapshot = np.std([edges / all_edges for edges in edges_per_snapshot])
     avg_interactions_per_snapshot = np.mean([interactions / all_interactions for interactions in interactions_per_snapshot])
     std_interactions_per_snapshot = np.std([interactions / all_interactions for interactions in interactions_per_snapshot])
-    min_interactions = min(interactions_per_snapshot)/all_interactions
-    max_interactions = max(interactions_per_snapshot)/all_interactions
+    # min_interactions = min(interactions_per_snapshot)/all_interactions
+    # max_interactions = max(interactions_per_snapshot)/all_interactions
 
     return {
         "n": num_snapshots,
         "total_links": all_edges,
         "total_interaction": all_interactions,
-        "mu_links": round(avg_edges_per_snapshot * 100, 2),
+        "mu_links": round(avg_edges_per_snapshot * 10, 2),
         "std_links": round(std_edges_per_snapshot * 100, 2),
         "mu_contacts": round(avg_interactions_per_snapshot * 100, 2),
         "std_contacts": round(std_interactions_per_snapshot * 100, 2),
-        "min_contacts": round(min_interactions * 100, 8),
-        "max_contacts": round(max_interactions * 100, 2),
         # "mu_min_w": round(avg_min_weight, 2),
         # "mu_w": round(avg_weight_per_snapshot, 2),
         # "mu_max_w": round(avg_max_weight, 2),
@@ -63,10 +63,13 @@ def grid_search(datasets, delta_ts):
     for dataset in datasets:
         links = set([(u, v) for (u, v) in dataset.edges()])
         for delta_t in delta_ts:
-            data = aggregate_into_snapshots(dataset, delta_t=delta_t)
-            result = {'Name': dataset.name, '△t': delta_t}
-            result = result | get_aggregated_properties(data, links)
-            results.append(result)
+            for delta_t_step in delta_t_step__physical:
+                if delta_t_step > delta_t:
+                    break
+                data = aggregate_into_snapshots(dataset, delta_t=delta_t, step_t=delta_t_step)
+                result = {'Name': dataset.name, '△t': delta_t, '△t_step': delta_t_step}
+                result = result | get_aggregated_properties(data, links)
+                results.append(result)
     return results
 
 

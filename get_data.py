@@ -166,33 +166,26 @@ def get_socio_sms():
     return G
 
 
-def aggregate_into_snapshots(G, delta_t):
-    # Calculate the global minimum timestamp to establish the starting point for intervals
-    timestamps = [data['timestamp'] for _, _, data in G.edges(data=True)]
-    if not timestamps:
-        return []  # Return an empty list if there are no edges
+def aggregate_into_snapshots(G, delta_t, step_t=None):
+    if step_t is None:
+        step_t = delta_t
 
-    min_timestamp = min(timestamps)
-
-    # Use a dictionary to dynamically create graphs for intervals when needed
+    min_timestamp = min([data['timestamp'] for _, _, data in G.edges(data=True)])
     snapshots = {}
 
     for u, v, data in G.edges(data=True):
         timestamp = data['timestamp']
-        # Calculate the interval index based on the edge's timestamp
-        interval_index = (timestamp - min_timestamp) // delta_t
+        interval_index = (timestamp - min_timestamp) // step_t
 
-        # Create a new graph for this interval if it doesn't exist
-        if interval_index not in snapshots:
-            snapshots[interval_index] = nx.Graph(name=G.name, t=interval_index, delta_t=delta_t)
+        while interval_index * step_t + delta_t > timestamp - min_timestamp and interval_index >= 0:
+            if interval_index not in snapshots:
+                snapshots[interval_index] = nx.Graph(name=G.name, t=interval_index, delta_t=delta_t, step_t=step_t)
+                snapshots[interval_index].add_nodes_from(G)
+            graph = snapshots[interval_index]
+            if graph.has_edge(u, v):
+                graph[u][v]['weight'] += 1
+            else:
+                graph.add_edge(u, v, weight=1)
+            interval_index -= 1
 
-        graph = snapshots[interval_index]
-
-        # Aggregate edges as weights in the interval graph
-        if graph.has_edge(u, v):
-            graph[u][v]['weight'] += 1
-        else:
-            graph.add_edge(u, v, weight=1)
-
-    # Convert the snapshots dictionary back into a sorted list of graphs
     return [snapshots[key] for key in sorted(snapshots)]
