@@ -1,12 +1,4 @@
-import networkx as nx
-import pandas as pd
-from tsfresh import extract_relevant_features
 
-import get_data
-
-M = 60  # 1 minute in seconds
-H = M * 60  # 1 hour in seconds
-D = H * 24  # 1 day in seconds
 
 
 # datasets = [(get_data.get_hypertext(), 20 * M),
@@ -21,6 +13,13 @@ D = H * 24  # 1 day in seconds
 # datasets = list(map(lambda x: (get_data.aggregate_into_snapshots(x[0], delta_t=x[1]), x[0].name) if
 # x[1] is not None else x[0], datasets))
 
+import networkx as nx
+import pandas as pd
+from tsfresh import extract_features
+
+M = 60  # 1 minute in seconds
+H = M * 60  # 1 hour in seconds
+D = H * 24  # 1 day in seconds
 
 def extract_edge_features_undirected(snapshots, u, v, i):
     rows = []
@@ -77,14 +76,4 @@ def extract_train_data(snapshots, test_snapshot):
 
     X = pd.concat(X_data, ignore_index=True)
     Y = pd.Series(Y_data)
-    X.to_csv('X.csv', index=False)
-    Y.to_csv('Y.csv', index=False)
-
-
-if __name__ == '__main__':
-    data = get_data.aggregate_into_snapshots(get_data.get_hypertext(), delta_t=20 * M)
-    extract_train_data(data[:-1], data[-1])
-    X = pd.read_csv('X.csv')
-    Y = pd.read_csv('Y.csv').squeeze()
-    res = extract_relevant_features(X, Y, column_id='id', column_sort='time')
-    res.to_csv('features.csv', index=False)
+    return extract_features(X, column_id="id"), Y
