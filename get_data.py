@@ -3,11 +3,7 @@ import os
 import datetime
 
 import networkx as nx
-
-M = 60  # 1 minute in seconds
-H = M * 60  # 1 hour in seconds
-D = H * 24  # 1 day in seconds
-
+from utils import *
 
 # Format: (100, 106, {'timestamp': 1246360360})
 # Non aggregated, 2009-06-29 - 2009-07-01 (3 days)
@@ -35,7 +31,7 @@ def get_college_1():
     G = nx.MultiGraph(name="College graph 1")  # Initialize an empty MultiGraph
     with open("data/CollegeMsg.dat", "r") as file:
         for line in file:
-            node1, node2, timestamp = line.strip().split()  # Adjust split method based on your file's delimiter
+            node1, node2, timestamp = line.strip().split()  # A djust split method based on your file's delimiter
             if int(timestamp) > college_split:
                 break
             G.add_edge(int(node1), int(node2), timestamp=int(timestamp))

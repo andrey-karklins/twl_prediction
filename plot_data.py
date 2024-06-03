@@ -4,10 +4,7 @@ from get_data import *
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-
-M = 60  # 1 minute in seconds
-H = M * 60  # 1 hour in seconds
-D = H * 24  # 1 day in seconds
+from utils import *
 
 
 def plot_graph_density(G, title, bin_size='1h'):
