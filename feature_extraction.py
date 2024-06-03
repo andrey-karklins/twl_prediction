@@ -86,9 +86,9 @@ def get_folds(data, n_folds, observation_size):
 
 
 def train_test_feature_extraction():
-    dataset = get_socio_sms()
-    delta_t = 1 * D
-    n_folds = 5
+    dataset = get_socio_calls()
+    delta_t = 3 * D
+    n_folds = 3
     observation_size = 10
 
     data = aggregate_into_snapshots(dataset, delta_t=delta_t)
@@ -96,7 +96,9 @@ def train_test_feature_extraction():
     for i, fold in enumerate(folds):
         X_trains = []
         Y_trains = []
+        print(f"Processing fold {i + 1}")
         for observation_window in fold[:-1]:
+            print(f"Processing observation window {observation_window[0].graph['t']}-{observation_window[-1].graph['t']}")
             X_train, Y_train = extract_train_data(observation_window[:-1], observation_window[-1])
             X_trains.append(X_train)
             Y_trains.append(Y_train)
