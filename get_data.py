@@ -3,7 +3,10 @@ import os
 import datetime
 
 import networkx as nx
+import numpy as np
+
 from utils import *
+
 
 # Format: (100, 106, {'timestamp': 1246360360})
 # Non aggregated, 2009-06-29 - 2009-07-01 (3 days)
@@ -185,3 +188,24 @@ def aggregate_into_snapshots(G, delta_t, step_t=None):
             interval_index -= 1
 
     return [snapshots[key] for key in sorted(snapshots)]
+
+
+def aggregate_to_matrix(G, delta_t):
+    edges = set([(u, v) for (u, v) in G.edges()])
+    global_G = nx.Graph()
+    for i, (u, v) in enumerate(edges):
+        global_G.add_edge(u, v, id=i)
+    timestamps = [data['timestamp'] for _, _, data in G.edges(data=True)]
+    min_timestamp = min(timestamps)
+    time_dict = {}
+    for i, (u, v) in enumerate(edges):
+        for _, _, data in G.edges((u, v), data=True):
+            timestamp = data['timestamp']
+            interval_index = int((timestamp - min_timestamp) // delta_t)
+            if time_dict.get(interval_index) is None:
+                time_dict[interval_index] = np.zeros(len(edges))
+            time_dict[interval_index][i] += 1
+    matrix = np.zeros((len(edges), len(time_dict)))
+    for i, k in enumerate(sorted(time_dict.keys())):
+        matrix[:, i] = time_dict[k]
+    return matrix, global_G
