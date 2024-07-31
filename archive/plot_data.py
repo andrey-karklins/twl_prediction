@@ -110,7 +110,6 @@ def print_graph_properties_aggregated(snapshots):
 plt.close('all')
 # print_graph_properties(get_hypertext(), plot_bin_size='1h')
 print_graph_properties_aggregated(aggregate_into_snapshots(get_hypertext(), delta_t=H))
-print_graph_properties_aggregated(aggregate_into_snapshots_step(get_hypertext(), delta_t=H, step_t=H))
 # print('########################################################################################')
 # print_graph_properties(get_college(), plot_bin_size='1D')
 # print('########################################################################################')
