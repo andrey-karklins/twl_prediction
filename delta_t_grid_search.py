@@ -5,8 +5,8 @@ from scipy.stats import pearsonr
 from utils import *
 from get_data import *
 
-delta_ts_physical = [10 * M, 20 * M, 40 * M, 1 * H]
-delta_ts_virtual = [12 * H, 1 * D, 3 * D, 7 * D]
+delta_ts_physical = [10 * M, 30 * M, 1 * H]
+delta_ts_virtual = [1 * H, 12 * H, 1 * D]
 datasets_physical = [get_hypertext(), get_SFHH()]
 datasets_virtual = [get_college_1(), get_college_2(), get_socio_calls(), get_socio_sms()]
 
