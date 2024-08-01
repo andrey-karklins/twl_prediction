@@ -1,9 +1,0 @@
-Name,△t,n,avg_jaccard_similarity,std_jaccard_similarity,autocorrelation
-Hypertext graph,600,223,0.2071,0.1977,0.57
-Hypertext graph,1200,118,0.1637,0.1773,0.3615
-Hypertext graph,2400,63,0.1188,0.1062,0.2452
-Hypertext graph,3600,43,0.0922,0.0795,0.625
-SFHH graph,600,128,0.2241,0.1067,0.3807
-SFHH graph,1200,65,0.168,0.0797,0.1697
-SFHH graph,2400,33,0.12,0.0514,0.2091
-SFHH graph,3600,22,0.1032,0.0434,0.4856
