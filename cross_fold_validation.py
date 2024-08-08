@@ -35,3 +35,12 @@ def temporal_cross_validation(data, model, n_splits=5, metric=mean_squared_error
     average_score = np.mean(scores)
 
     return scores, average_score
+
+
+def model_no_fit(data, model):
+    # Transpose the data to (T, M) format
+    data = data.T
+    predictions = model.predict(data[:-1])
+    y_test = data[1:]
+    score = mean_squared_error(y_test, predictions)
+    return score
