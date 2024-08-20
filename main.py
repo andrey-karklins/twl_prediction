@@ -31,7 +31,7 @@ for (data, G) in datasets:
     baseline_score = model_no_fit(data, BaseModel())
 
     # Grid search
-    _, _, sd_results = grid_search_sdmodel(data, taus, Ls)
+    # _, _, sd_results = grid_search_sdmodel(data, taus, Ls)
     _, _, scd_results = grid_search_scdmodel(data, taus, Ls, coefs, G)
 
     print("---------------------------------------------------")

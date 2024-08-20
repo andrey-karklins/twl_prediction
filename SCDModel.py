@@ -1,6 +1,15 @@
 import numpy as np
 
 
+def _get_neighbors_sum(X, cache):
+    neighbors_sum = np.zeros(X.shape[1])
+    for edge in range(X.shape[1]):
+        if len(cache[edge]) == 0:
+            continue
+        neighbors_sum[edge] += X[:, cache[edge]].sum() / len(cache[edge])
+    return neighbors_sum
+
+
 class SCDModel:
     def __init__(self, tau, L, alpha, beta, gamma, G_global):
         self.tau = tau  # Decay factor
@@ -9,69 +18,78 @@ class SCDModel:
         self.beta = beta  # Weight for neighbor-driven component
         self.gamma = gamma  # Weight for common neighbor-driven component
         self.G_global = G_global  # The global graph structure
+        # Map both edge (1, 2) and (2, 1) to the same ID
+        self.edge_to_id = {tuple(sorted(edge)): i for i, edge in enumerate(self.G_global.edges())}
+
+        # Cache neighbor and common neighbor edges for each edge in the graph
+        self.neighbor_edges_cache = {}
+        self.common_neighbor_edges_cache = {}
+
+        self._cache_neighbor_edges()
+        self._cache_common_neighbor_edges()
+
+    def _cache_neighbor_edges(self):
+        """Precompute and cache the neighbor edges for each edge."""
+        for edge in self.G_global.edges():
+            sorted_edge = tuple(sorted(edge))
+            neighbors_0 = list(self.G_global.neighbors(edge[0]))
+            neighbors_1 = list(self.G_global.neighbors(edge[1]))
+
+            neighbors_0_edges = [self.edge_to_id[tuple(sorted((edge[0], neighbor)))]
+                                 for neighbor in neighbors_0
+                                 if neighbor != edge[1] and tuple(sorted((edge[0], neighbor))) in self.edge_to_id]
+
+            neighbors_1_edges = [self.edge_to_id[tuple(sorted((edge[1], neighbor)))]
+                                 for neighbor in neighbors_1
+                                 if neighbor != edge[0] and tuple(sorted((edge[1], neighbor))) in self.edge_to_id]
+
+            self.neighbor_edges_cache[self.edge_to_id[sorted_edge]] = np.array(neighbors_0_edges + neighbors_1_edges)
+
+    def _cache_common_neighbor_edges(self):
+        """Precompute and cache the common neighbor edges for each edge."""
+        for edge in self.G_global.edges():
+            sorted_edge = tuple(sorted(edge))
+            common_neighbors = set(self.G_global.neighbors(edge[0])) & set(self.G_global.neighbors(edge[1]))
+
+            common_neighbors_edges = [self.edge_to_id[tuple(sorted((edge[0], cn)))]
+                                      for cn in common_neighbors
+                                      if tuple(sorted((edge[0], cn))) in self.edge_to_id] + \
+                                     [self.edge_to_id[tuple(sorted((edge[1], cn)))]
+                                      for cn in common_neighbors
+                                      if tuple(sorted((edge[1], cn))) in self.edge_to_id]
+
+            self.common_neighbor_edges_cache[self.edge_to_id[sorted_edge]] = np.array(common_neighbors_edges)
 
     def fit(self, X, y=None):
         # No fitting process needed for SCDModel
         pass
 
     def predict(self, X):
-        """
-        Predict the future states of links based on the past states using the self- and cross-driven model.
-
-        Parameters:
-        X (numpy.ndarray): A 2D array of shape (T, M) where T is the number of time steps and M is the number of links.
-
-        Returns:
-        numpy.ndarray: A 2D array of shape (T, M) containing the predicted states for each time step.
-        """
         T, M = X.shape
         predictions = np.zeros((T, M))
 
         for t in range(T):
-            # Determine the start of the window
             start_index = max(0, t - self.L + 1)
             # Calculate the time indices for the current window
             time_indices = np.arange(start_index, t + 1)
             # Calculate the exponential decay factors
             decay_factors = np.exp(-self.tau * (t - time_indices))
             decay_factors /= decay_factors.sum()  # Normalize decay factors
+            # Calculate the weighted sum for each feature (link) using the decay factors
+            weighted_X = decay_factors[:, np.newaxis] * X[start_index:t + 1]
 
-            for j in range(M):
-                # Identify the edge corresponding to feature j
-                edge = list(self.G_global.edges())[j]
+            # Self-driven component
+            self_driven = self.alpha * weighted_X.sum(axis=0)
 
-                # Self-driven component (influence of the past states of the same link)
-                weighted_sum_self = X[start_index:t + 1, j].sum()
-                self_driven = self.alpha * weighted_sum_self
+            # Neighbor-driven component
+            neighbor_driven = self.beta * _get_neighbors_sum(weighted_X, self.neighbor_edges_cache)
 
-                # Neighbor-driven component (influence of neighboring links that share a node with the target link)
-                neighbor_sum = 0
-                for neighbor in self.G_global.neighbors(edge[0]):
-                    if neighbor != edge[1] and (edge[0], neighbor) in self.G_global.edges:
-                        neighbor_edge_id = self.G_global.edges[edge[0], neighbor]["id"]
-                        neighbor_sum += X[start_index:t + 1, neighbor_edge_id].sum()
-                for neighbor in self.G_global.neighbors(edge[1]):
-                    if neighbor != edge[0] and (edge[1], neighbor) in self.G_global.edges:
-                        neighbor_edge_id = self.G_global.edges[edge[1], neighbor]["id"]
-                        neighbor_sum += X[start_index:t + 1, neighbor_edge_id].sum()
-                neighbor_driven = self.beta * neighbor_sum
+            # Common neighbor-driven component
+            common_neighbor_driven = self.gamma * _get_neighbors_sum(weighted_X, self.common_neighbor_edges_cache)
 
-                # Common neighbor-driven component (influence of links that form a triangle with the target link)
-                common_neighbor_sum = 0
-                common_neighbors = set(self.G_global.neighbors(edge[0])) & set(self.G_global.neighbors(edge[1]))
-                for common_neighbor in common_neighbors:
-                    if (edge[0], common_neighbor) in self.G_global.edges:
-                        common_neighbor_edge_id = self.G_global.edges[edge[0], common_neighbor]["id"]
-                        common_neighbor_sum += X[start_index:t + 1, common_neighbor_edge_id].sum()
-                    if (edge[1], common_neighbor) in self.G_global.edges:
-                        common_neighbor_edge_id = self.G_global.edges[edge[1], common_neighbor]["id"]
-                        common_neighbor_sum += X[start_index:t + 1, common_neighbor_edge_id].sum()
-                common_neighbor_driven = self.gamma * common_neighbor_sum
+            # Total prediction for each link at time t
+            total_driven = self_driven + neighbor_driven + common_neighbor_driven
 
-                # Total prediction for the current link at time t (before applying decay)
-                total_driven = self_driven + neighbor_driven + common_neighbor_driven
-
-                # Apply decay factors to the total driven component
-                predictions[t, j] = np.dot(decay_factors, np.full(len(decay_factors), total_driven))
+            predictions[t] = total_driven
 
         return predictions
