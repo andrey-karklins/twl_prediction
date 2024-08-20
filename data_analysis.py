@@ -2,8 +2,8 @@ import numpy as np
 from scipy.stats import pearsonr
 import matplotlib.pyplot as plt
 
-from get_data import aggregate_to_matrix
-from utils import seconds_to_human_readable
+from get_data import aggregate_to_matrix, get_socio_sms
+from utils import seconds_to_human_readable, D
 
 
 def weighted_jaccard_similarity(array1, array2):
@@ -130,3 +130,59 @@ def plot_autocorrelation_jaccard(datasets, delta_ts, max_lag=6, filename='combin
     plt.tight_layout()
     plt.savefig(filename)
     plt.show()
+
+
+def apply_fourier_transform(matrix, filename="fourier_transform.png"):
+    """
+    Apply Fourier Transform to each row (time series of each edge) in the MxT matrix.
+
+    Parameters:
+    matrix (numpy.ndarray): The MxT matrix, where M is the number of edges and T is the number of timestamps.
+
+    Returns:
+    numpy.ndarray: The Fourier-transformed matrix of the same shape as the input.
+    """
+    # Apply the Fourier Transform to each row (axis=1 applies it to the time dimension)
+    fourier_matrix = np.fft.fft(matrix, axis=1)
+    magnitude = np.abs(fourier_matrix)
+    phase = np.angle(fourier_matrix)
+    power = magnitude ** 2
+
+    # Averaging over all edges (rows)
+    avg_magnitude = np.mean(magnitude, axis=0)
+    avg_phase = np.mean(phase, axis=0)
+    avg_power = np.mean(power, axis=0)
+
+    # Get the number of timestamps (T)
+    T = fourier_matrix.shape[1]
+
+    # Frequency axis
+    frequencies = np.fft.fftfreq(T)
+
+    # Plotting the averaged magnitude, phase, and power spectra
+    fig, ax = plt.subplots(3, 1, figsize=(12, 12))
+
+    # Averaged Magnitude Spectrum Plot
+    ax[0].stem(frequencies, avg_magnitude)
+    ax[0].set_title('Averaged Magnitude Spectrum')
+    ax[0].set_xlabel('Frequency')
+    ax[0].set_ylabel('Magnitude')
+
+    # Averaged Phase Spectrum Plot
+    ax[1].stem(frequencies, avg_phase)
+    ax[1].set_title('Averaged Phase Spectrum')
+    ax[1].set_xlabel('Frequency')
+    ax[1].set_ylabel('Phase (radians)')
+
+    # Averaged Power Spectrum Plot
+    ax[2].stem(frequencies, avg_power)
+    ax[2].set_title('Averaged Power Spectrum')
+    ax[2].set_xlabel('Frequency')
+    ax[2].set_ylabel('Power')
+
+    # Display the plots
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.show()
+
+    return avg_magnitude, avg_phase, avg_power

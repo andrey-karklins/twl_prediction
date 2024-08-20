@@ -47,37 +47,28 @@ def grid_search_scdmodel(data, taus, Ls, coefs, G_global):
     return best_params, best_score, results
 
 
-def print_top_sd_results(results, top_n=5):
+def write_top_sd_results_to_file(results, baseline_score, filename='top_sd_results.txt', top_n=3):
     # Sort results by score
     sorted_results = sorted(results, key=lambda x: x[-1])
-    print(f"Top {top_n} SDModel results:")
-    for i in range(min(top_n, len(sorted_results))):
-        print(f"{i + 1} - tau: {sorted_results[i][0]}, L: {sorted_results[i][1]}, MSE: {sorted_results[i][2]}")
+
+    with open(filename, 'w') as file:
+        file.write(f"Baseline score: {baseline_score}\n")
+        file.write(f"\nTop {top_n} SDModel results:\n")
+        for i in range(min(top_n, len(sorted_results))):
+            file.write(
+                f"{i + 1} - tau: {sorted_results[i][0]}, L: {sorted_results[i][1]}, MSE: {sorted_results[i][2]}\n")
 
 
-def print_top_scd_results(results, top_n=5):
+def write_top_scd_results_to_file(results, baseline_score, filename='top_scd_results.txt', top_n=3):
     # Sort results by score
     sorted_results = sorted(results, key=lambda x: x[-1])
-    print(f"Top {top_n} SCDModel results:")
-    for i in range(min(top_n, len(sorted_results))):
-        print(f"{i + 1} - tau: {sorted_results[i][0]}, L: {sorted_results[i][1]}, coef: {sorted_results[i][2]}, MSE: {sorted_results[i][3]}")
+
+    with open(filename, 'w') as file:
+        file.write(f"Baseline score: {baseline_score}\n")
+        file.write(f"\nTop {top_n} SCDModel results:\n")
+        for i in range(min(top_n, len(sorted_results))):
+            file.write(
+                f"{i + 1} - tau: {sorted_results[i][0]}, L: {sorted_results[i][1]}, coef: {sorted_results[i][2]}, MSE: {sorted_results[i][3]}\n")
 
 
 data, G_global = aggregate_to_matrix(get_socio_sms(), delta_t=1 * D)
-
-# Parameter grid
-taus = [0.1, 0.5, 1, 3, 5]
-Ls = [1, 3, 5, 10]
-coefs = [(1, 0, 0), (0.8, 0.2, 0), (0.8, 0, 0.2), (0.8, 0.1, 0.1)]
-
-# Baseline
-
-# Grid search
-_, _, sd_results = grid_search_sdmodel(data, taus, Ls)
-_, _, scd_results = grid_search_scdmodel(data, taus, Ls, coefs, G_global)
-print("---------------------------------------------------")
-print("Baseline score: ", model_no_fit(data, BaseModel()))
-print("---------------------------------------------------")
-print_top_sd_results(sd_results)
-print("---------------------------------------------------")
-print_top_scd_results(scd_results)

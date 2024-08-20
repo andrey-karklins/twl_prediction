@@ -192,7 +192,7 @@ def aggregate_into_snapshots(G, delta_t, step_t=None):
 
 def aggregate_to_matrix(G, delta_t):
     edges = set([(u, v) for (u, v) in G.edges()])
-    global_G = nx.Graph(name=G.name)
+    global_G = nx.Graph(name=G.name, delta_t=delta_t)
     for i, (u, v) in enumerate(edges):
         global_G.add_edge(u, v, id=i)
     timestamps = [data['timestamp'] for _, _, data in G.edges(data=True)]

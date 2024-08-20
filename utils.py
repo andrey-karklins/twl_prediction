@@ -29,12 +29,12 @@ def seconds_to_human_readable(seconds):
     # Create a human-readable string
     human_readable = []
     if days > 0:
-        human_readable.append(f"{days} d")
+        human_readable.append(f"{days}d")
     if hours > 0:
-        human_readable.append(f"{hours} h")
+        human_readable.append(f"{hours}h")
     if minutes > 0:
-        human_readable.append(f"{minutes} m")
+        human_readable.append(f"{minutes}m")
     if seconds > 0 or not human_readable:  # Include seconds even if zero or if the list is empty
-        human_readable.append(f"{seconds} s")
+        human_readable.append(f"{seconds}s")
 
-    return ', '.join(human_readable)
+    return human_readable
