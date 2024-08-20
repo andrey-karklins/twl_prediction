@@ -3,20 +3,36 @@ import numpy as np
 
 class SDModel:
     def __init__(self, tau, L):
-        self.tau = tau
-        self.L = L
+        self.tau = tau  # Decay factor
+        self.L = L  # Number of past time steps to consider
 
     def fit(self, X, y=None):
-        pass  # No fitting process needed for SDModel
+        # No fitting process needed for SDModel
+        pass
 
     def predict(self, X):
-        n_samples, n_features = X.shape
-        predictions = np.zeros((n_samples, n_features))
+        """
+        Predict the future states of links based on the past states using the self-driven model.
 
-        for i in range(n_samples):
-            start_index = max(0, i - self.L + 1)
-            decay_factors = np.exp(-self.tau * np.arange(i - start_index, -1, -1))
-            weighted_sum = np.sum(X[start_index:i+1] * decay_factors[:, np.newaxis], axis=0)
-            predictions[i] = weighted_sum
+        Parameters:
+        X (numpy.ndarray): A 2D array of shape (T, M) where T is the number of time steps and M is the number of links.
+
+        Returns:
+        numpy.ndarray: A 2D array of shape (T, M) containing the predicted states for each time step.
+        """
+        T, M = X.shape
+        predictions = np.zeros((T, M))
+
+        for t in range(T):
+            # Determine the start of the window
+            start_index = max(0, t - self.L + 1)
+            # Calculate the time indices for the current window
+            time_indices = np.arange(start_index, t + 1)
+            # Calculate the exponential decay factors
+            decay_factors = np.exp(-self.tau * (t - time_indices))
+            decay_factors /= decay_factors.sum()  # Normalize decay factors
+            # Calculate the weighted sum for each feature (link) using the decay factors
+            weighted_sum = np.dot(decay_factors, X[start_index:t + 1])
+            predictions[t] = weighted_sum
 
         return predictions
