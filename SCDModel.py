@@ -41,7 +41,7 @@ class SCDModel:
                 edge = list(self.G_global.edges())[j]
 
                 # Self-driven component (influence of the past states of the same link)
-                weighted_sum_self = np.dot(decay_factors, X[start_index:t + 1, j])
+                weighted_sum_self = X[start_index:t + 1, j].sum()
                 self_driven = self.alpha * weighted_sum_self
 
                 # Neighbor-driven component (influence of neighboring links that share a node with the target link)
@@ -49,11 +49,11 @@ class SCDModel:
                 for neighbor in self.G_global.neighbors(edge[0]):
                     if neighbor != edge[1] and (edge[0], neighbor) in self.G_global.edges:
                         neighbor_edge_id = self.G_global.edges[edge[0], neighbor]["id"]
-                        neighbor_sum += np.dot(decay_factors, X[start_index:t + 1, neighbor_edge_id])
+                        neighbor_sum += X[start_index:t + 1, neighbor_edge_id].sum()
                 for neighbor in self.G_global.neighbors(edge[1]):
                     if neighbor != edge[0] and (edge[1], neighbor) in self.G_global.edges:
                         neighbor_edge_id = self.G_global.edges[edge[1], neighbor]["id"]
-                        neighbor_sum += np.dot(decay_factors, X[start_index:t + 1, neighbor_edge_id])
+                        neighbor_sum += X[start_index:t + 1, neighbor_edge_id].sum()
                 neighbor_driven = self.beta * neighbor_sum
 
                 # Common neighbor-driven component (influence of links that form a triangle with the target link)
@@ -62,13 +62,16 @@ class SCDModel:
                 for common_neighbor in common_neighbors:
                     if (edge[0], common_neighbor) in self.G_global.edges:
                         common_neighbor_edge_id = self.G_global.edges[edge[0], common_neighbor]["id"]
-                        common_neighbor_sum += np.dot(decay_factors, X[start_index:t + 1, common_neighbor_edge_id])
+                        common_neighbor_sum += X[start_index:t + 1, common_neighbor_edge_id].sum()
                     if (edge[1], common_neighbor) in self.G_global.edges:
                         common_neighbor_edge_id = self.G_global.edges[edge[1], common_neighbor]["id"]
-                        common_neighbor_sum += np.dot(decay_factors, X[start_index:t + 1, common_neighbor_edge_id])
+                        common_neighbor_sum += X[start_index:t + 1, common_neighbor_edge_id].sum()
                 common_neighbor_driven = self.gamma * common_neighbor_sum
 
-                # Total prediction for the current link at time t
-                predictions[t, j] = self_driven + neighbor_driven + common_neighbor_driven
+                # Total prediction for the current link at time t (before applying decay)
+                total_driven = self_driven + neighbor_driven + common_neighbor_driven
+
+                # Apply decay factors to the total driven component
+                predictions[t, j] = np.dot(decay_factors, np.full(len(decay_factors), total_driven))
 
         return predictions
