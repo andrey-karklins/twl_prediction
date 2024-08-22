@@ -9,5 +9,5 @@ class BaseModel:
     def fit(self, X, y=None):
         pass  # No fitting process needed for SDModel
 
-    def predict(self, X):
-        return X
+    def predict(self, X, indices):
+        return X[indices]

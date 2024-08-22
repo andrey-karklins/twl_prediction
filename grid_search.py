@@ -36,7 +36,7 @@ def grid_search_scdmodel(data, taus, Ls, coefs, G_global):
         for L in Ls:
             for coef in coefs:
                 model = SCDModel(tau=tau, L=L, alpha=coef[0], beta=coef[1], gamma=coef[2], G_global=G_global)
-                score = model_no_fit(data, model)
+                score = model_no_fit(data, model, threshold=300)
                 results.append((tau, L, coef, score))
                 print(f"tau: {tau}, L: {L}, coef: {coef}, MSE: {score}")
 

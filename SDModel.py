@@ -10,7 +10,7 @@ class SDModel:
         # No fitting process needed for SDModel
         pass
 
-    def predict(self, X):
+    def predict(self, X, indices):
         """
         Predict the future states of links based on the past states using the self-driven model.
 
@@ -21,9 +21,9 @@ class SDModel:
         numpy.ndarray: A 2D array of shape (T, M) containing the predicted states for each time step.
         """
         T, M = X.shape
-        predictions = np.zeros((T, M))
+        predictions = np.zeros((len(indices), M))
 
-        for t in range(T):
+        for i,t in enumerate(indices):
             # Determine the start of the window
             start_index = max(0, t - self.L + 1)
             # Calculate the time indices for the current window
@@ -33,6 +33,6 @@ class SDModel:
             decay_factors /= decay_factors.sum()  # Normalize decay factors
             # Calculate the weighted sum for each feature (link) using the decay factors
             weighted_sum = np.dot(decay_factors, X[start_index:t + 1])
-            predictions[t] = weighted_sum
+            predictions[i] = weighted_sum
 
         return predictions

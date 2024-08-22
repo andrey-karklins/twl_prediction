@@ -64,11 +64,11 @@ class SCDModel:
         # No fitting process needed for SCDModel
         pass
 
-    def predict(self, X):
+    def predict(self, X, indices):
         T, M = X.shape
-        predictions = np.zeros((T, M))
+        predictions = np.zeros((len(indices), M))
 
-        for t in range(T):
+        for i,t in enumerate(indices):
             start_index = max(0, t - self.L + 1)
             # Calculate the time indices for the current window
             time_indices = np.arange(start_index, t + 1)
@@ -90,6 +90,6 @@ class SCDModel:
             # Total prediction for each link at time t
             total_driven = self_driven + neighbor_driven + common_neighbor_driven
 
-            predictions[t] = total_driven
+            predictions[i] = total_driven
 
         return predictions

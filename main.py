@@ -11,13 +11,13 @@ delta_ts_physical = [10 * M, 30 * M, 1 * H]
 delta_ts_virtual = [1 * H, 12 * H, 1 * D]
 taus = [0.1, 0.5, 1, 3, 5]
 Ls = [1, 3, 5, 10]
-coefs = [(1, 0, 0), (0.8, 0.2, 0), (0.8, 0, 0.2), (0.8, 0.1, 0.1)]
+coefs = [(1, 0, 0), (0.75, 0.25, 0), (0.75, 0, 0.25), (0.6, 0.2, 0.2)]
 
 datasets = []
 
-for dataset in datasets_physical:
-    for delta_t in delta_ts_physical:
-        datasets.append(aggregate_to_matrix(dataset, delta_t))
+# for dataset in datasets_physical:
+#     for delta_t in delta_ts_physical:
+#         datasets.append(aggregate_to_matrix(dataset, delta_t))
 for dataset in datasets_virtual:
     for delta_t in delta_ts_virtual:
         datasets.append(aggregate_to_matrix(dataset, delta_t))
@@ -31,7 +31,7 @@ for (data, G) in datasets:
     baseline_score = model_no_fit(data, BaseModel())
 
     # Grid search
-    # _, _, sd_results = grid_search_sdmodel(data, taus, Ls)
+    _, _, sd_results = grid_search_sdmodel(data, taus, Ls)
     _, _, scd_results = grid_search_scdmodel(data, taus, Ls, coefs, G)
 
     print("---------------------------------------------------")
