@@ -67,6 +67,13 @@ def write_combined_results_to_file(sd_results, scd_results, baseline_score, file
             file.write(
                 f"{i + 1} - tau: {sorted_scd_results[i][0]}, L: {sorted_scd_results[i][1]}, coef: {sorted_scd_results[i][2]}, MSE: {sorted_scd_results[i][3]}\n")
 
-
+def write_top1_results_to_file(sd_results, scd_results, baseline_scores, delta_ts, dataset_name, filename='combined_results.txt'):
+    with open(filename, 'w') as file:
+        for (sd_res, scd_res, base_score, delta_t) in zip(sd_results, scd_results, baseline_scores, delta_ts):
+            file.write(f"Dataset: {dataset_name}, Delta_t: {seconds_to_human_readable(delta_t)}\n")
+            file.write(f"Baseline model - {base_score}\n")
+            file.write(f"SDModel - {sd_res[2]} - tau: {sd_res[0]}, L: {sd_res[1]}\n")
+            file.write(f"SCDModel - {scd_res[3]} - tau: {scd_res[0]}, L: {scd_res[1]}, coef: {scd_res[2]}\n")
+            file.write(f"-----------------------------------------------------------------------------------\n")
 
 data, G_global = aggregate_to_matrix(get_socio_sms(), delta_t=1 * D)
