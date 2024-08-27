@@ -1,3 +1,4 @@
+from data_analysis import apply_fourier_transform
 from grid_search import *
 
 datasets_physical = [get_hypertext(), get_SFHH()]
@@ -15,18 +16,28 @@ coefs = [(1, 0, 0), (0.75, 0.25, 0), (0.75, 0, 0.25), (0.6, 0.2, 0.2)]
 
 datasets = []
 
-# for dataset in datasets_physical:
-#     for delta_t in delta_ts_physical:
-#         datasets.append(aggregate_to_matrix(dataset, delta_t))
+for dataset in datasets_physical:
+    tmp_datasets = []
+    tmp_delta_ts = []
+    for delta_t in delta_ts_physical:
+        datasets.append(aggregate_to_matrix(dataset, delta_t))
+        tmp_datasets.append(aggregate_to_matrix(dataset, delta_t)[0])
+        tmp_delta_ts.append(delta_t)
+    apply_fourier_transform(tmp_datasets, tmp_delta_ts, dataset.name, filename=f'results/plots/fourier_transform_{dataset.name}.png')
+
 for dataset in datasets_virtual:
+    tmp_datasets = []
+    tmp_delta_ts = []
     for delta_t in delta_ts_virtual:
         datasets.append(aggregate_to_matrix(dataset, delta_t))
+        tmp_datasets.append(aggregate_to_matrix(dataset, delta_t)[0])
+        tmp_delta_ts.append(delta_t)
+    apply_fourier_transform(tmp_datasets, tmp_delta_ts, dataset.name, filename=f'results/plots/fourier_transform_{dataset.name}.png')
 
 # plot_autocorrelation_jaccard(datasets_physical, delta_ts_physical, filename='results/plots/correlation_jaccard_physical.png')
 # plot_autocorrelation_jaccard(datasets_virtual, delta_ts_virtual, filename='results/plots/correlation_jaccard_virtual.png')
 
 for (data, G) in datasets:
-    # apply_fourier_transform(data, filename=f'results/plots/{G.name}_{seconds_to_human_readable(G.graph["delta_t"])}_fft.png')
     # Baseline
     baseline_score = model_no_fit(data, BaseModel())
 

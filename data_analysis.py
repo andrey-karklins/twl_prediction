@@ -131,58 +131,47 @@ def plot_autocorrelation_jaccard(datasets, delta_ts, max_lag=6, filename='combin
     plt.savefig(filename)
     plt.show()
 
-
-def apply_fourier_transform(matrix, filename="fourier_transform.png"):
+def apply_fourier_transform(matrices, delta_ts, dataset_name, filename="fourier_transform.png"):
     """
-    Apply Fourier Transform to each row (time series of each edge) in the MxT matrix.
+    Apply Fourier Transform to each row (time series of each edge) in the MxT matrices.
 
     Parameters:
-    matrix (numpy.ndarray): The MxT matrix, where M is the number of edges and T is the number of timestamps.
+    matrices (list of numpy.ndarray): List of MxT matrices, where M is the number of edges and T is the number of timestamps.
+    delta_ts (list of int): List of aggregation times corresponding to each matrix.
+    dataset_name (str): Name of the dataset for plot title.
+    filename (str): The filename for saving the plot.
 
     Returns:
-    numpy.ndarray: The Fourier-transformed matrix of the same shape as the input.
+    list of numpy.ndarray: List of averaged magnitudes for each input matrix.
     """
-    # Apply the Fourier Transform to each row (axis=1 applies it to the time dimension)
-    fourier_matrix = np.fft.fft(matrix, axis=1)
-    magnitude = np.abs(fourier_matrix)
-    phase = np.angle(fourier_matrix)
-    power = magnitude ** 2
+    num_matrices = len(matrices)
+    fig, axs = plt.subplots(num_matrices, 1, figsize=(12, 6 * num_matrices))  # Create a column of subplots
 
-    # Averaging over all edges (rows)
-    avg_magnitude = np.mean(magnitude, axis=0)
-    avg_phase = np.mean(phase, axis=0)
-    avg_power = np.mean(power, axis=0)
+    for i, (matrix, delta_t) in enumerate(zip(matrices, delta_ts)):
+        # Apply the Fourier Transform to each row (axis=1 applies it to the time dimension)
+        fourier_matrix = np.fft.fft(matrix, axis=1)
+        magnitude = np.abs(fourier_matrix)
 
-    # Get the number of timestamps (T)
-    T = fourier_matrix.shape[1]
+        # Averaging over all edges (rows)
+        avg_magnitude = np.mean(magnitude, axis=0)
 
-    # Frequency axis
-    frequencies = np.fft.fftfreq(T)
+        # Get the number of timestamps (T)
+        T = fourier_matrix.shape[1]
 
-    # Plotting the averaged magnitude, phase, and power spectra
-    fig, ax = plt.subplots(3, 1, figsize=(12, 12))
+        # Frequency axis
+        frequencies = np.fft.fftfreq(T)
 
-    # Averaged Magnitude Spectrum Plot
-    ax[0].stem(frequencies, avg_magnitude)
-    ax[0].set_title('Averaged Magnitude Spectrum')
-    ax[0].set_xlabel('Frequency')
-    ax[0].set_ylabel('Magnitude')
+        # Plot the averaged Magnitude Spectrum in the respective subplot
+        axs[i].stem(frequencies, avg_magnitude, markerfmt='.', basefmt=" ")
+        axs[i].set_title(f'Averaged Magnitude Spectrum - Aggregation time: {seconds_to_human_readable(delta_t)}', fontsize=10)
+        axs[i].set_xlabel('Frequency')
+        axs[i].set_ylabel('Magnitude')
+        axs[i].grid(True)
 
-    # Averaged Phase Spectrum Plot
-    ax[1].stem(frequencies, avg_phase)
-    ax[1].set_title('Averaged Phase Spectrum')
-    ax[1].set_xlabel('Frequency')
-    ax[1].set_ylabel('Phase (radians)')
-
-    # Averaged Power Spectrum Plot
-    ax[2].stem(frequencies, avg_power)
-    ax[2].set_title('Averaged Power Spectrum')
-    ax[2].set_xlabel('Frequency')
-    ax[2].set_ylabel('Power')
-
-    # Display the plots
-    plt.tight_layout()
+    # Overall figure title and layout adjustments
+    fig.suptitle(f'Magnitude Spectrum Analysis for {dataset_name}', fontsize=16)
+    plt.tight_layout(rect=[0, 0, 1, 0.96])  # Adjust layout to make space for the suptitle
     plt.savefig(filename)
     plt.show()
 
-    return avg_magnitude, avg_phase, avg_power
+    return [np.mean(np.abs(np.fft.fft(matrix, axis=1)), axis=0) for matrix in matrices]

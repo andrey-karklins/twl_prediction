@@ -36,5 +36,5 @@ def seconds_to_human_readable(seconds):
         human_readable.append(f"{minutes}m")
     if seconds > 0 or not human_readable:  # Include seconds even if zero or if the list is empty
         human_readable.append(f"{seconds}s")
-
+    human_readable = " ".join(human_readable)
     return human_readable
