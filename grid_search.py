@@ -1,10 +1,6 @@
-import numpy as np
-
-import get_data
-from BaseModel import BaseModel
-from SCDModel import SCDModel
-from SDModel import SDModel
-from cross_fold_validation import temporal_cross_validation, model_no_fit
+from models.SCDModel import SCDModel
+from models.SDModel import SDModel
+from cross_fold_validation import model_no_fit
 from get_data import *
 
 
@@ -35,11 +31,11 @@ def grid_search_scdmodel(data, taus, Ls, coefs, G_global):
     for tau in taus:
         for L in Ls:
             for coef in coefs:
-                model = SCDModel(tau=tau, L=L, alpha=coef[0], beta=coef[1], gamma=coef[2], G_global=G_global)
+                coef_sum = sum(coef)
+                model = SCDModel(tau=tau, L=L, alpha=coef[0]/coef_sum, beta=coef[1]/coef_sum, gamma=coef[2]/coef_sum, G_global=G_global)
                 score = model_no_fit(data, model, threshold=300)
                 results.append((tau, L, coef, score))
                 print(f"tau: {tau}, L: {L}, coef: {coef}, MSE: {score}")
-
                 if score < best_score:
                     best_score = score
                     best_params = (tau, L, coef)

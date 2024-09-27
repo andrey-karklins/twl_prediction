@@ -2,6 +2,8 @@ from data_analysis import apply_fourier_transform, plot_autocorrelation_jaccard
 from grid_search import *
 import concurrent.futures
 
+from models.BaseModel import BaseModel
+
 # Assuming get_hypertext, get_SFHH, etc., are already defined functions
 datasets_physical = [get_hypertext(), get_SFHH()]
 datasets_virtual = [
@@ -14,7 +16,7 @@ delta_ts_physical = [10 * M, 30 * M, 1 * H]
 delta_ts_virtual = [1 * H, 12 * H, 1 * D]
 taus = [0.1, 0.5, 1, 3, 5]
 Ls = [1, 3, 5, 10]
-coefs = [(1, 0, 0), (0.75, 0.25, 0), (0.75, 0, 0.25), (0.6, 0.2, 0.2)]
+coefs = [(1, 1, 0), (1, 0.5, 0), (1, 0, 1), (1, 0, 0.5), (1, 1, 1), (1, 0.5, 0.5)]
 
 def generate_results(dataset, delta_ts, delta_ts_label):
     top_sd_results = []
@@ -40,7 +42,8 @@ def process_dataset(dataset, delta_ts, delta_ts_label):
     generate_results(dataset, delta_ts, delta_ts_label)
 
 if __name__ == "__main__":
-    plot_autocorrelation_jaccard(datasets_virtual, delta_ts_virtual)
+    plot_autocorrelation_jaccard(datasets_virtual, delta_ts_virtual, filename='results/plots/correlation_jaccard_virtual.png')
+    plot_autocorrelation_jaccard(datasets_physical, delta_ts_physical, filename='results/plots/correlation_jaccard_physical.png')
     # Use ProcessPoolExecutor for parallel execution
     # with concurrent.futures.ProcessPoolExecutor() as executor:
     #     # Submit tasks for physical datasets
