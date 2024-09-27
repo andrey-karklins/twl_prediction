@@ -19,77 +19,25 @@ def weighted_jaccard_similarity(array1, array2):
     return min_sum / max_sum
 
 
-def plot_lag_autocorrelation(datasets, max_lag=6):
+def plot_lag_autocorrelation(datasets, delta_ts, max_lag=6):
     """
-    Plots the lag vs. autocorrelation for each dataset with features.
+    Plots the lag vs. autocorrelation for each dataset with different aggregation times as lines.
 
     Args:
-        datasets (list of np.array): List of 2D numpy arrays, each representing a dataset (NxT).
+        datasets (list of tuples): List of tuples where each tuple contains (data, G),
+                                   and G is a graph structure or dataset metadata.
+        delta_ts (list of int): List of different aggregation times (Δt).
         max_lag (int): Maximum lag value to calculate autocorrelation for.
     """
-    plt.figure(figsize=(10, 6))
+    fig, axs = plt.subplots(len(datasets), 1, figsize=(10, 6 * len(datasets)))
 
-    for i, (data, G) in enumerate(datasets):
-        N, T = data.shape
-        avg_autocorrelations = []
+    if len(datasets) == 1:
+        axs = [axs]  # Ensure axs is a list even for one dataset
 
-        for lag in range(max_lag + 1):
-            autocorrelations = []
-            for feature in range(N):
-                if T - lag > 0:
-                    autocorr = pearsonr(data[feature, :-lag], data[feature, lag:])[0] if lag != 0 else 1.0
-                    autocorrelations.append(autocorr)
-            avg_autocorrelations.append(np.mean(autocorrelations))
-
-        plt.plot(range(max_lag + 1), avg_autocorrelations, label=G.name)
-
-    plt.xlabel('Lag Δ')
-    plt.ylabel('Autocorrelation')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
-
-def plot_lag_weighted_jaccard_similarity(datasets, max_lag=6):
-    """
-    Plots the lag vs. weighted Jaccard similarity for each dataset with features.
-
-    Args:
-        datasets (list of np.array): List of 2D numpy arrays, each representing a dataset (NxT).
-        max_lag (int): Maximum lag value to calculate weighted Jaccard similarity for.
-    """
-    plt.figure(figsize=(10, 6))
-
-    for i, (data, G) in enumerate(datasets):
-        N, T = data.shape
-        avg_jaccard_similarities = []
-
-        for lag in range(max_lag + 1):
-            jaccard_similarities = []
-            for feature in range(N):
-                if T - lag > 0:
-                    original_data = data[feature, :-lag] if lag != 0 else data[feature, :]
-                    lagged_data = data[feature, lag:]
-                    jaccard_similarity = weighted_jaccard_similarity(original_data, lagged_data)
-                    jaccard_similarities.append(jaccard_similarity)
-            avg_jaccard_similarities.append(np.mean(jaccard_similarities))
-
-        plt.plot(range(max_lag + 1), avg_jaccard_similarities, label=G.name)
-
-    plt.xlabel('Lag Δ')
-    plt.ylabel('Weighted Jaccard Similarity')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
-
-def plot_autocorrelation_jaccard(datasets, delta_ts, max_lag=6, filename='combined_plots.png'):
-    fig, axs = plt.subplots(3, 2, figsize=(15, 15))
-    axs = axs.flatten()
-    for i, delta_t in enumerate(delta_ts):
-        for j, dataset in enumerate(datasets):
+    for idx, (dataset, G) in enumerate(datasets):
+        ax = axs[idx]
+        for delta_t in delta_ts:
             data, G = aggregate_to_matrix(dataset, delta_t)
-            # Autocorrelation Plot
             N, T = data.shape
             avg_autocorrelations = []
 
@@ -101,14 +49,38 @@ def plot_autocorrelation_jaccard(datasets, delta_ts, max_lag=6, filename='combin
                         autocorrelations.append(autocorr)
                 avg_autocorrelations.append(np.nanmean(autocorrelations))
 
-            axs[i * 2].plot(range(max_lag + 1), avg_autocorrelations, label=G.name)
-            axs[i * 2].set_title(f'Autocorrelation, Δt = {seconds_to_human_readable(delta_t)}')
-            axs[i * 2].set_xlabel('Lag Δ')
-            axs[i * 2].set_ylabel('Autocorrelation')
-            axs[i * 2].legend()
-            axs[i * 2].grid(True)
+            ax.plot(range(max_lag + 1), avg_autocorrelations, label=f'Δt = {seconds_to_human_readable(delta_t)}')
 
-            # Weighted Jaccard Similarity Plot
+        ax.set_title(f'Autocorrelation for Dataset: {G.name}')
+        ax.set_xlabel('Lag Δ')
+        ax.set_ylabel('Autocorrelation')
+        ax.legend()
+        ax.grid(True)
+
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_lag_weighted_jaccard_similarity(datasets, delta_ts, max_lag=6):
+    """
+    Plots the lag vs. weighted Jaccard similarity for each dataset with different aggregation times as lines.
+
+    Args:
+        datasets (list of tuples): List of tuples where each tuple contains (data, G),
+                                   and G is a graph structure or dataset metadata.
+        delta_ts (list of int): List of different aggregation times (Δt).
+        max_lag (int): Maximum lag value to calculate weighted Jaccard similarity for.
+    """
+    fig, axs = plt.subplots(len(datasets), 1, figsize=(10, 6 * len(datasets)))
+
+    if len(datasets) == 1:
+        axs = [axs]  # Ensure axs is a list even for one dataset
+
+    for idx, (dataset, G) in enumerate(datasets):
+        ax = axs[idx]
+        for delta_t in delta_ts:
+            data, G = aggregate_to_matrix(dataset, delta_t)
+            N, T = data.shape
             avg_jaccard_similarities = []
 
             for lag in range(max_lag + 1):
@@ -119,17 +91,91 @@ def plot_autocorrelation_jaccard(datasets, delta_ts, max_lag=6, filename='combin
                         lagged_data = data[feature, lag:]
                         jaccard_similarity = weighted_jaccard_similarity(original_data, lagged_data)
                         jaccard_similarities.append(jaccard_similarity)
-                avg_jaccard_similarities.append(np.mean(jaccard_similarities))
+                avg_jaccard_similarities.append(np.nanmean(jaccard_similarities))
 
-            axs[i * 2 + 1].plot(range(max_lag + 1), avg_jaccard_similarities, label=G.name)
-            axs[i * 2 + 1].set_title(f'Weighted Jaccard Similarity, Δt = {seconds_to_human_readable(delta_t)}')
-            axs[i * 2 + 1].set_xlabel('Lag Δ')
-            axs[i * 2 + 1].set_ylabel('Weighted Jaccard Similarity')
-            axs[i * 2 + 1].legend()
-            axs[i * 2 + 1].grid(True)
+            ax.plot(range(max_lag + 1), avg_jaccard_similarities, label=f'Δt = {seconds_to_human_readable(delta_t)}')
+
+        ax.set_title(f'Weighted Jaccard Similarity for Dataset: {G.name}')
+        ax.set_xlabel('Lag Δ')
+        ax.set_ylabel('Weighted Jaccard Similarity')
+        ax.legend()
+        ax.grid(True)
+
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_autocorrelation_jaccard(datasets, delta_ts, max_lag=6, filename='combined_plots.png'):
+    """
+    Combines both autocorrelation and weighted Jaccard similarity plots for each dataset,
+    with different aggregation times as colored lines, arranged side by side (2 columns).
+
+    Args:
+        datasets (list of tuples): List of datasets with their corresponding metadata.
+        delta_ts (list of int): Different aggregation times to plot.
+        max_lag (int): Maximum lag to calculate.
+        filename (str): File name to save the plot image.
+    """
+    fig, axs = plt.subplots(len(datasets), 2, figsize=(14, 6 * len(datasets)))
+
+    if len(datasets) == 1:
+        axs = [axs]  # Ensure axs is a list even for one dataset
+
+    for idx, dataset in enumerate(datasets):
+        # Autocorrelation Plot
+        ax_autocorr = axs[idx][0]
+        for delta_t in delta_ts:
+            data, G = aggregate_to_matrix(dataset, delta_t)
+            N, T = data.shape
+            avg_autocorrelations = []
+
+            for lag in range(max_lag + 1):
+                autocorrelations = []
+                for feature in range(N):
+                    if T - lag > 0:
+                        autocorr = pearsonr(data[feature, :-lag], data[feature, lag:])[0] if lag != 0 else 1.0
+                        autocorrelations.append(autocorr)
+                avg_autocorrelations.append(np.nanmean(autocorrelations))
+
+            ax_autocorr.plot(range(max_lag + 1), avg_autocorrelations,
+                             label=f'Δt = {seconds_to_human_readable(delta_t)}')
+
+        ax_autocorr.set_title(f'Autocorrelation for Dataset: {G.name}')
+        ax_autocorr.set_xlabel('Lag Δ')
+        ax_autocorr.set_ylabel('Autocorrelation')
+        ax_autocorr.legend()
+        ax_autocorr.grid(True)
+
+        # Weighted Jaccard Similarity Plot
+        ax_jaccard = axs[idx][1]
+        for delta_t in delta_ts:
+            data, G = aggregate_to_matrix(dataset, delta_t)
+            N, T = data.shape
+            avg_jaccard_similarities = []
+
+            for lag in range(max_lag + 1):
+                jaccard_similarities = []
+                for feature in range(N):
+                    if T - lag > 0:
+                        original_data = data[feature, :-lag] if lag != 0 else data[feature, :]
+                        lagged_data = data[feature, lag:]
+                        jaccard_similarity = weighted_jaccard_similarity(original_data, lagged_data)
+                        jaccard_similarities.append(jaccard_similarity)
+                avg_jaccard_similarities.append(np.nanmean(jaccard_similarities))
+
+            ax_jaccard.plot(range(max_lag + 1), avg_jaccard_similarities,
+                            label=f'Δt = {seconds_to_human_readable(delta_t)}')
+
+        ax_jaccard.set_title(f'Weighted Jaccard Similarity for Dataset: {G.name}')
+        ax_jaccard.set_xlabel('Lag Δ')
+        ax_jaccard.set_ylabel('Weighted Jaccard Similarity')
+        ax_jaccard.legend()
+        ax_jaccard.grid(True)
+
     plt.tight_layout()
     plt.savefig(filename)
     plt.show()
+
 
 def apply_fourier_transform(matrices, delta_ts, dataset_name, filename="fourier_transform.png"):
     """
