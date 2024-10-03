@@ -1,8 +1,7 @@
 from data_analysis import plot_lag_autocorrelation, plot_lag_weighted_jaccard_similarity, plot_autocorrelation_jaccard
 from get_data import *
 
-delta_ts_physical = [10 * M, 30 * M, 1 * H]
-delta_ts_virtual = [1 * H, 12 * H, 1 * D]
+# Getting the datasets
 datasets_physical = [get_hypertext(), get_SFHH()]
 datasets_virtual = [
     get_college_1(),
@@ -10,53 +9,79 @@ datasets_virtual = [
     get_socio_calls(),
     get_socio_sms()
 ]
+# Time intervals (delta_t)
+delta_ts_physical = [10 * M, 30 * M, 1 * H]
+delta_ts_virtual = [1 * H, 1 * D, 3 * D]
 
+import csv
+import numpy as np
+import networkx as nx
 
-def get_aggregated_properties(snapshots, links):
-    num_snapshots = len(snapshots)
-    all_edges = len(links)
-    edges_per_snapshot = [len(g.edges()) for g in snapshots]
-    interactions_per_snapshot = [sum(data['weight'] for _, _, data in g.edges(data=True)) for g in snapshots]
-
-
-    # To store minimum and maximum weights per snapshot
-    min_weights = []
-    max_weights = []
-
-    for g in snapshots:
-        if g.edges(data=True):  # Check if there are edges in the snapshot
-            snapshot_weights = [data['weight'] for _, _, data in g.edges(data=True)]
-            min_weights.append(min(snapshot_weights))
-            max_weights.append(max(snapshot_weights))
+# Function to calculate and write aggregated properties
+def get_aggregated_properties(matrix, global_G, dataset_name, delta_t, output_file):
+    num_snapshots = matrix.shape[1]  # Number of time intervals
+    all_edges = len(global_G.edges())  # Total number of edges in the global graph
+    edges_per_snapshot = np.count_nonzero(matrix, axis=0)  # Count of active edges per snapshot
+    interactions_per_snapshot = matrix.sum(axis=0)  # Total interactions (edge weights) per snapshot
 
     # Calculate averages and standard deviations
-    all_interactions = sum(interactions_per_snapshot)
-    avg_edges_per_snapshot = np.mean([edges / all_edges for edges in edges_per_snapshot])
-    std_edges_per_snapshot = np.std([edges / all_edges for edges in edges_per_snapshot])
-    avg_interactions_per_snapshot = np.mean(
-        [interactions / all_interactions for interactions in interactions_per_snapshot])
-    std_interactions_per_snapshot = np.std(
-        [interactions / all_interactions for interactions in interactions_per_snapshot])
+    total_interactions = interactions_per_snapshot.sum()
+    avg_edges_per_snapshot = np.mean(edges_per_snapshot / all_edges)  # Percentage of edges per snapshot
+    std_edges_per_snapshot = np.std(edges_per_snapshot / all_edges)
+    avg_interactions_per_snapshot = np.mean(interactions_per_snapshot / total_interactions)
+    std_interactions_per_snapshot = np.std(interactions_per_snapshot / total_interactions)
 
-
-    return {
-        "n": num_snapshots,
-        "total_links": all_edges,
-        "total_interaction": all_interactions,
-        "mu_links": round(avg_edges_per_snapshot * 100, 2),
-        "std_links": round(std_edges_per_snapshot * 100, 2),
-        "mu_contacts": round(avg_interactions_per_snapshot * 100, 2),
-        "std_contacts": round(std_interactions_per_snapshot * 100, 2),
+    # Create result dictionary
+    results = {
+        "Dataset name": dataset_name,
+        "delta_t": delta_t,
+        "total_number_snapshots": num_snapshots,  # Changed to total number of snapshots
+        "total_number_interactions": int(total_interactions),
+        "average_percentage_of_links_per_snapshot": round(avg_edges_per_snapshot * 100, 2),
+        "std_percentage_of_links_per_snapshot": round(std_edges_per_snapshot * 100, 2),
+        "average_percentage_of_interactions_per_snapshot": round(avg_interactions_per_snapshot * 100, 2),
+        "std_percentage_of_interactions_per_snapshot": round(std_interactions_per_snapshot * 100, 2),
     }
 
+    # Write the data to a CSV file
+    write_to_csv(output_file, results)
 
-def aggregate_data(datasets, delta_t):
-    results = []
+# Function to write data to CSV
+def write_to_csv(output_file, results):
+    # Check if the file exists
+    file_exists = False
+    try:
+        with open(output_file, 'r') as file:
+            file_exists = True
+    except FileNotFoundError:
+        pass
+
+    # Write data to CSV
+    with open(output_file, 'a', newline='') as csvfile:
+        fieldnames = ["Dataset name", "delta_t", "total_number_snapshots", "total_number_interactions",
+                      "average_percentage_of_links_per_snapshot", "std_percentage_of_links_per_snapshot",
+                      "average_percentage_of_interactions_per_snapshot", "std_percentage_of_interactions_per_snapshot"]
+
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        # Write the header only if the file is being created for the first time
+        if not file_exists:
+            writer.writeheader()
+
+        # Write the actual data
+        writer.writerow(results)
+
+# Function to aggregate data for datasets and delta_t
+def aggregate_data(datasets, delta_ts, output_file):
     for dataset in datasets:
-        data = aggregate_to_matrix(dataset, delta_t=delta_t)
-        results.append(data)
-    return results
+        for delta_t in delta_ts:
+            # Apply the new aggregate_to_matrix function
+            matrix, global_G = aggregate_to_matrix(dataset, delta_t=delta_t)
 
+            # Get the aggregated properties and write them to the CSV file
+            get_aggregated_properties(matrix, global_G, dataset.name, delta_t, output_file)
 
-plot_autocorrelation_jaccard(datasets_virtual, delta_ts_virtual)
-
+# Example usage:
+# Aggregating data for physical datasets and virtual datasets
+aggregate_data(datasets_physical, delta_ts_physical, "physical_datasets_output.csv")
+aggregate_data(datasets_virtual, delta_ts_virtual, "virtual_datasets_output.csv")

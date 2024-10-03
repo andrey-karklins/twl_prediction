@@ -1,0 +1,13 @@
+Dataset name,delta_t,total_number_snapshots,total_number_interactions,average_percentage_of_links_per_snapshot,std_percentage_of_links_per_snapshot,average_percentage_of_interactions_per_snapshot,std_percentage_of_interactions_per_snapshot
+College graph 1,3600,1249,5483245,11.56,9.14,0.08,0.11
+College graph 1,86400,63,5483245,53.69,24.75,1.59,1.29
+College graph 1,259200,22,5483245,66.38,28.74,4.55,3.58
+College graph 2,3600,2072,545175,5.29,4.28,0.05,0.1
+College graph 2,86400,129,545175,32.58,13.48,0.78,0.72
+College graph 2,259200,43,545175,52.1,13.75,2.33,1.61
+Socio-calls graph,3600,2825,152287,8.02,5.19,0.04,0.04
+Socio-calls graph,86400,279,152287,39.79,15.53,0.36,0.22
+Socio-calls graph,259200,96,152287,61.96,20.34,1.04,0.56
+Socio-sms graph,3600,1893,62582,9.27,6.38,0.05,0.09
+Socio-sms graph,86400,186,62582,25.1,12.66,0.54,0.75
+Socio-sms graph,259200,63,62582,43.06,12.58,1.59,1.71

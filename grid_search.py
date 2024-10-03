@@ -72,4 +72,7 @@ def write_top1_results_to_file(sd_results, scd_results, baseline_scores, delta_t
             file.write(f"SCDModel - {scd_res[3]} - tau: {scd_res[0]}, L: {scd_res[1]}, coef: {scd_res[2]}\n")
             file.write(f"-----------------------------------------------------------------------------------\n")
 
-data, G_global = aggregate_to_matrix(get_socio_sms(), delta_t=1 * D)
+def write_results_to_csv(sd_results, scd_results, baseline_scores, delta_ts, dataset_name, filename='results/results.csv'):
+    with open(filename, 'a') as file:
+        for (sd_res, scd_res, base_score, delta_t) in zip(sd_results, scd_results, baseline_scores, delta_ts):
+            file.write(f"{dataset_name},{delta_t},{base_score},{sd_res[2]},{sd_res[0]},{sd_res[1]},{scd_res[3]},{scd_res[0]},{scd_res[1]},{scd_res[2]}\n")
