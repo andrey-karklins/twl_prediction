@@ -1,4 +1,4 @@
-from data_analysis import apply_fourier_transform, plot_autocorrelation_jaccard
+from data_analysis import apply_fourier_transform, plot_autocorrelation_jaccard, save_autocorrelation_jaccard_to_csv
 from grid_search import *
 import concurrent.futures
 
@@ -43,17 +43,17 @@ def process_dataset(dataset, delta_ts, delta_ts_label):
     generate_results(dataset, delta_ts, delta_ts_label)
 
 if __name__ == "__main__":
-    plot_autocorrelation_jaccard(datasets_virtual, delta_ts_virtual, filename='results/plots/correlation_jaccard_virtual.png')
-    plot_autocorrelation_jaccard(datasets_physical, delta_ts_physical, filename='results/plots/correlation_jaccard_physical.png')
-    # Use ProcessPoolExecutor for parallel execution
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        # Submit tasks for physical datasets
-        futures_physical = [executor.submit(process_dataset, dataset, delta_ts_physical, 'physical') for dataset in datasets_physical]
-        # Submit tasks for virtual datasets
-        futures_virtual = [executor.submit(process_dataset, dataset, delta_ts_virtual, 'virtual') for dataset in datasets_virtual]
-
-        # Wait for all tasks to complete
-        concurrent.futures.wait(futures_physical + futures_virtual)
+    save_autocorrelation_jaccard_to_csv(datasets_virtual, delta_ts_virtual, filename='results/correlation_jaccard_virtual.csv')
+    save_autocorrelation_jaccard_to_csv(datasets_physical, delta_ts_physical, filename='results/correlation_jaccard_physical.csv')
+    # # Use ProcessPoolExecutor for parallel execution
+    # with concurrent.futures.ProcessPoolExecutor() as executor:
+    #     # Submit tasks for physical datasets
+    #     futures_physical = [executor.submit(process_dataset, dataset, delta_ts_physical, 'physical') for dataset in datasets_physical]
+    #     # Submit tasks for virtual datasets
+    #     futures_virtual = [executor.submit(process_dataset, dataset, delta_ts_virtual, 'virtual') for dataset in datasets_virtual]
+    #
+    #     # Wait for all tasks to complete
+    #     concurrent.futures.wait(futures_physical + futures_virtual)
 
     # Optionally, handle post-execution tasks or results collection
     # e.g., plotting correlation after all processing is done

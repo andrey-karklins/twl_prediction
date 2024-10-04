@@ -1,3 +1,5 @@
+import csv
+
 import numpy as np
 from scipy.stats import pearsonr
 import matplotlib.pyplot as plt
@@ -175,6 +177,61 @@ def plot_autocorrelation_jaccard(datasets, delta_ts, max_lag=6, filename='combin
     plt.tight_layout()
     plt.savefig(filename)
     plt.show()
+
+
+def save_autocorrelation_jaccard_to_csv(datasets, delta_ts, max_lag=6, filename='autocorrelation_jaccard_results.csv'):
+    """
+    Saves both autocorrelation and weighted Jaccard similarity for each dataset into a CSV file,
+    with different aggregation times as rows.
+
+    Args:
+        datasets (list of tuples): List of datasets with their corresponding metadata.
+        delta_ts (list of int): Different aggregation times to calculate.
+        max_lag (int): Maximum lag to calculate.
+        filename (str): File name to save the CSV.
+    """
+
+    with open(filename, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(['Dataset', 'Aggregation Time', 'Metric', 'Lag', 'Value'])
+
+        for idx, dataset in enumerate(datasets):
+            dataset_name = dataset.name
+
+            # Autocorrelation values
+            for delta_t in delta_ts:
+                data, G = aggregate_to_matrix(dataset, delta_t)
+                N, T = data.shape
+
+                # Calculate and save autocorrelation values
+                for lag in range(max_lag + 1):
+                    autocorrelations = []
+                    for feature in range(N):
+                        if T - lag > 0:
+                            autocorr = pearsonr(data[feature, :-lag], data[feature, lag:])[0] if lag != 0 else 1.0
+                            autocorrelations.append(autocorr)
+                    avg_autocorrelation = np.nanmean(autocorrelations)
+                    writer.writerow(
+                        [dataset_name, seconds_to_human_readable(delta_t), 'Autocorrelation', lag, avg_autocorrelation])
+
+            # Weighted Jaccard similarity values
+            for delta_t in delta_ts:
+                data, G = aggregate_to_matrix(dataset, delta_t)
+                N, T = data.shape
+
+                # Calculate and save Jaccard similarity values
+                for lag in range(max_lag + 1):
+                    jaccard_similarities = []
+                    for feature in range(N):
+                        if T - lag > 0:
+                            original_data = data[feature, :-lag] if lag != 0 else data[feature, :]
+                            lagged_data = data[feature, lag:]
+                            jaccard_similarity = weighted_jaccard_similarity(original_data, lagged_data)
+                            jaccard_similarities.append(jaccard_similarity)
+                    avg_jaccard_similarity = np.nanmean(jaccard_similarities)
+                    writer.writerow(
+                        [dataset_name, seconds_to_human_readable(delta_t), 'Weighted Jaccard Similarity', lag,
+                         avg_jaccard_similarity])
 
 
 def apply_fourier_transform(matrices, delta_ts, dataset_name, filename="fourier_transform.png"):
