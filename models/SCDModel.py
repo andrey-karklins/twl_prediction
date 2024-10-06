@@ -69,14 +69,14 @@ class SCDModel:
         predictions = np.zeros((len(indices), M))
 
         for i,t in enumerate(indices):
-            start_index = max(0, t - self.L + 1)
+            start_index = max(0, t - self.L)
             # Calculate the time indices for the current window
-            time_indices = np.arange(start_index, t + 1)
+            time_indices = np.arange(start_index, t)
             # Calculate the exponential decay factors
             decay_factors = np.exp(-self.tau * (t - time_indices))
             decay_factors /= decay_factors.sum()  # Normalize decay factors
             # Calculate the weighted sum for each feature (link) using the decay factors
-            weighted_X = decay_factors[:, np.newaxis] * X[start_index:t + 1]
+            weighted_X = decay_factors[:, np.newaxis] * X[start_index:t]
 
             # Self-driven component
             self_driven = self.alpha * weighted_X.sum(axis=0)

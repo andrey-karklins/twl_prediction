@@ -25,14 +25,14 @@ class SDModel:
 
         for i,t in enumerate(indices):
             # Determine the start of the window
-            start_index = max(0, t - self.L + 1)
+            start_index = max(0, t - self.L)
             # Calculate the time indices for the current window
-            time_indices = np.arange(start_index, t + 1)
+            time_indices = np.arange(start_index, t)
             # Calculate the exponential decay factors
             decay_factors = np.exp(-self.tau * (t - time_indices))
             decay_factors /= decay_factors.sum()  # Normalize decay factors
             # Calculate the weighted sum for each feature (link) using the decay factors
-            weighted_sum = np.dot(decay_factors, X[start_index:t + 1])
+            weighted_sum = np.dot(decay_factors, X[start_index:t])
             predictions[i] = weighted_sum
 
         return predictions

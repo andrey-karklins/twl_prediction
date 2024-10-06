@@ -1,11 +1,7 @@
-import numpy as np
-from numpy.ma.core import indices
-from sklearn.model_selection import TimeSeriesSplit
-from sklearn.metrics import mean_squared_error
 
 import numpy as np
 from sklearn.model_selection import TimeSeriesSplit
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error, precision_recall_curve, auc
 
 
 def temporal_cross_validation(data, model, n_splits=5, metric=mean_squared_error):
@@ -38,15 +34,42 @@ def temporal_cross_validation(data, model, n_splits=5, metric=mean_squared_error
     return scores, average_score
 
 
-def model_no_fit(data, model, threshold = 0):
-    # Transpose the data to (T, M) format
+def model_no_fit(data, model, threshold=0, activity_threshold=0.5):
+    # Transpose the data to (T, M) format (time steps first)
     data = data.T
-    if threshold != 0 and data.shape[0] > threshold:
-        indices = np.random.randint(0, data.shape[0]-1, threshold)
+    T = data.shape[0]
+    L = model.L  # Assuming the model has an attribute 'L' that defines the sliding window length
+
+    # Number of predictions to make
+    num_predictions = T - L - 1
+
+    # Select data indices for prediction based on threshold
+    if threshold != 0 and num_predictions > threshold:
+        indices = np.random.randint(L, T, threshold)
     else:
-        indices = np.arange(data.shape[0]-1, dtype=int)
+        indices = np.arange(L, T, dtype=int)
+
+    # Make predictions using the model
     predictions = model.predict(data[:-1], indices)
-    indices = indices + 1
     y_test = data[indices]
-    score = mean_squared_error(y_test, predictions)
-    return score
+
+    # Calculate metrics
+    mse = mean_squared_error(y_test, predictions)
+    mae = mean_absolute_error(y_test, predictions)
+    rmse = np.sqrt(mse)
+
+    # Convert predictions and true values to binary (active/inactive) based on activity_threshold
+    predicted_active = (predictions.ravel() > activity_threshold).astype(int)
+    true_active = (y_test.ravel() > activity_threshold).astype(int)
+
+    # Precision-Recall Curve and Area Under Precision-Recall Curve (AUPRC)
+    precision, recall, _ = precision_recall_curve(true_active, predicted_active)
+    auprc = auc(recall, precision)
+
+    # Return all necessary metrics
+    return {
+        'MSE': mse,
+        'MAE': mae,
+        'RMSE': rmse,
+        'AUPRC': auprc
+    }

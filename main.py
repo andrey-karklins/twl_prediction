@@ -30,8 +30,8 @@ def generate_results(dataset, delta_ts, delta_ts_label):
         _, _, scd_results = grid_search_scdmodel(data, taus, Ls, coefs, G)
 
         base_scores.append(baseline_score)
-        top_sd_results.append(sorted(sd_results, key=lambda x: x[-1])[0])
-        top_scd_results.append(sorted(scd_results, key=lambda x: x[-1])[0])
+        top_sd_results.append(sorted(sd_results, key=lambda x: x[-1]['MSE'])[0])
+        top_scd_results.append(sorted(scd_results, key=lambda x: x[-1]['MSE'])[0])
 
     # apply_fourier_transform(tmp_datasets, tmp_delta_ts, dataset.name, filename=f'results/plots/fourier_transform_{dataset.name}.png')
     write_top1_results_to_file(top_sd_results, top_scd_results, base_scores, delta_ts, dataset.name,
@@ -43,19 +43,15 @@ def process_dataset(dataset, delta_ts, delta_ts_label):
     generate_results(dataset, delta_ts, delta_ts_label)
 
 if __name__ == "__main__":
-    save_autocorrelation_jaccard_to_csv(datasets_virtual, delta_ts_virtual, filename='results/correlation_jaccard_virtual.csv')
-    save_autocorrelation_jaccard_to_csv(datasets_physical, delta_ts_physical, filename='results/correlation_jaccard_physical.csv')
-    # # Use ProcessPoolExecutor for parallel execution
-    # with concurrent.futures.ProcessPoolExecutor() as executor:
-    #     # Submit tasks for physical datasets
-    #     futures_physical = [executor.submit(process_dataset, dataset, delta_ts_physical, 'physical') for dataset in datasets_physical]
-    #     # Submit tasks for virtual datasets
-    #     futures_virtual = [executor.submit(process_dataset, dataset, delta_ts_virtual, 'virtual') for dataset in datasets_virtual]
-    #
-    #     # Wait for all tasks to complete
-    #     concurrent.futures.wait(futures_physical + futures_virtual)
+    # save_autocorrelation_jaccard_to_csv(datasets_virtual, delta_ts_virtual, filename='results/correlation_jaccard_virtual.csv')
+    # save_autocorrelation_jaccard_to_csv(datasets_physical, delta_ts_physical, filename='results/correlation_jaccard_physical.csv')
+    # Use ProcessPoolExecutor for parallel execution
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        # Submit tasks for physical datasets
+        futures_physical = [executor.submit(process_dataset, dataset, delta_ts_physical, 'physical') for dataset in datasets_physical]
+        # Submit tasks for virtual datasets
+        futures_virtual = [executor.submit(process_dataset, dataset, delta_ts_virtual, 'virtual') for dataset in datasets_virtual]
 
-    # Optionally, handle post-execution tasks or results collection
-    # e.g., plotting correlation after all processing is done
-    # plot_autocorrelation_jaccard(datasets_physical, delta_t+s_physical, filename='results/plots/correlation_jaccard_physical.png')
-    # plot_autocorrelation_jaccard(datasets_virtual, delta_ts_virtual, filename='results/plots/correlation_jaccard_virtual.png')
+        # Wait for all tasks to complete
+        concurrent.futures.wait(futures_physical + futures_virtual)
+

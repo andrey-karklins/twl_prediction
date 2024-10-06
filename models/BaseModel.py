@@ -3,6 +3,7 @@ import numpy as np
 
 class BaseModel:
     def __init__(self):
+        self.L = 1  # Number of past time steps to consider
         pass
 
 
@@ -10,4 +11,4 @@ class BaseModel:
         pass  # No fitting process needed for SDModel
 
     def predict(self, X, indices):
-        return X[indices]
+        return X[indices-1]

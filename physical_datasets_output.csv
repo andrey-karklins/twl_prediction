@@ -1,7 +1,0 @@
-Dataset name,delta_t,total_number_snapshots,average_percentage_of_links_per_snapshot,std_percentage_of_links_per_snapshot,average_percentage_of_interactions_per_snapshot,std_percentage_of_interactions_per_snapshot
-Hypertext graph,600,223,45.36,25.91,0.45,0.43
-Hypertext graph,1800,81,62.0,29.41,1.23,1.13
-Hypertext graph,3600,43,70.91,31.72,2.33,1.98
-SFHH graph,600,128,41.93,26.14,0.78,0.76
-SFHH graph,1800,44,54.02,29.55,2.27,2.08
-SFHH graph,3600,22,66.92,29.79,4.55,3.85
