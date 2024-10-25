@@ -1,3 +1,5 @@
+import pickle
+
 from grid_search import *
 import concurrent.futures
 import logging
@@ -7,7 +9,7 @@ delta_ts_physical = [10 * M, 30 * M, 1 * H]
 delta_ts_virtual = [1 * H, 1 * D, 3 * D]
 taus = [0.1, 0.5, 1, 3, 5]
 Ls = [1, 3, 5, 10]
-coefs = [(0.8, 0.1, 0.1), (0.8, 0.2, 0), (0.8, 0, 0.2), (0.6, 0.2, 0.2)]
+coefs = [(0.8, 0.1, 0.1), (0.8, 0.2, 0), (0.8, 0, 0.2), (0.6, 0.2, 0.2), (0.6, 0.3, 0.1), (0.6, 0.1, 0.3)]
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -33,6 +35,18 @@ def generate_results(dataset, delta_ts, delta_ts_label):
                                filename=f'results/{dataset.name}_results.txt')
     write_results_to_csv(top_sd_results, top_scd_results, base_scores, delta_ts, dataset.name, filename='results/results.csv')
 
+
+def load_or_fetch_dataset(fetch_func, pickle_filename):
+    """Loads dataset from a pickle file if it exists; otherwise, fetches, pickles, and returns it."""
+    if os.path.exists(pickle_filename):
+        with open(pickle_filename, 'rb') as file:
+            dataset = pickle.load(file)
+    else:
+        dataset = fetch_func()
+        with open(pickle_filename, 'wb') as file:
+            pickle.dump(dataset, file)
+    return dataset
+
 # Function to handle parallel execution
 def process_dataset(dataset, delta_ts, delta_ts_label):
     try:
@@ -42,14 +56,16 @@ def process_dataset(dataset, delta_ts, delta_ts_label):
         raise  # Re-raise to propagate to the main process
 
 if __name__ == "__main__":
-    datasets_physical = [get_hypertext()
-        # , get_SFHH()
-                         ]
+    # Define dataset loading with pickling
+    datasets_physical = [
+        load_or_fetch_dataset(get_hypertext, 'pickles/hypertext.pkl'),
+        load_or_fetch_dataset(get_SFHH, 'pickles/SFHH.pkl')
+    ]
     datasets_virtual = [
-        # get_college_1(),
-        # get_college_2(),
-        # get_socio_calls(),
-        # get_socio_sms()
+        load_or_fetch_dataset(get_college_1, 'pickles/college_1.pkl'),
+        load_or_fetch_dataset(get_college_2, 'pickles/college_2.pkl'),
+        load_or_fetch_dataset(get_socio_calls, 'pickles/socio_calls.pkl'),
+        load_or_fetch_dataset(get_socio_sms, 'pickles/socio_sms.pkl')
     ]
     # save_autocorrelation_jaccard_to_csv(datasets_virtual, delta_ts_virtual, filename='results/correlation_jaccard_virtual.csv')
     # save_autocorrelation_jaccard_to_csv(datasets_physical, delta_ts_physical, filename='results/correlation_jaccard_physical.csv')
