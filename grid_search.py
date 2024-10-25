@@ -1,5 +1,6 @@
 import csv
 
+from models.OriginalSCDModel import OriginalSCDModel
 from models.SCDModel import SCDModel
 from models.SDModel import SDModel
 from cross_fold_validation import model_no_fit
@@ -33,7 +34,7 @@ def grid_search_scdmodel(data, taus, Ls, coefs, G_global):
         for L in Ls:
             for coef in coefs:
                 coef_sum = sum(coef)
-                model = SCDModel(tau=tau, L=L, alpha=coef[0]/coef_sum, beta=coef[1]/coef_sum, gamma=coef[2]/coef_sum, G_global=G_global)
+                model = OriginalSCDModel(tau=tau, L=L, alpha=coef[0]/coef_sum, beta=coef[1]/coef_sum, gamma=coef[2]/coef_sum, G_global=G_global)
                 score = model_no_fit(data, model, threshold=300)
                 results.append((tau, L, coef, score))
                 print(f"tau: {tau}, L: {L}, coef: {coef}, MSE: {score['MSE']}, MAE: {score['MAE']}, RMSE: {score['RMSE']}, AUPRC: {score['AUPRC']}")

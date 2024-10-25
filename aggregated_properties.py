@@ -20,7 +20,7 @@ import networkx as nx
 # Function to calculate and write aggregated properties
 def get_aggregated_properties(matrix, global_G, dataset_name, delta_t, output_file):
     num_snapshots = matrix.shape[1]  # Number of time intervals
-    all_edges = len(global_G.edges())  # Total number of edges in the global graph
+    all_edges = len(global_G.edges_list)  # Total number of edges in the global graph
     edges_per_snapshot = np.count_nonzero(matrix, axis=0)  # Count of active edges per snapshot
     interactions_per_snapshot = matrix.sum(axis=0)  # Total interactions (edge weights) per snapshot
 

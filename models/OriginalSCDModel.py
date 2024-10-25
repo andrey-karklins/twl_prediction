@@ -12,8 +12,7 @@ def _get_neighbors_sum(sd_predictions, neighbor_edges_cache):
             neighbor_edges_cache[i])
     return neighbors_average
 
-
-class SCDModel:
+class OriginalSCDModel:
     def __init__(self, tau, L, alpha, beta, gamma, G_global):
         self.tau = tau  # Decay factor
         self.L = L  # Number of past time steps to consider
@@ -22,11 +21,20 @@ class SCDModel:
         self.gamma = gamma  # Weight for common neighbor-driven component
         self.G_global = G_global  # The global graph structure
         self.SDModel = SDModel(tau, L)
-        self.sd_model_predictions_cache = {}
+        self.sd_model_predictions_cache = None
 
     def fit(self, X, y=None):
         # No fitting process needed for SCDModel
         pass
+
+    def _get_common_neighbors_sum(self, sd_predictions, common_neighbor_edges_cache):
+        neighbors_average = np.zeros(len(sd_predictions))
+        for i in range(len(neighbors_average)):
+            if len(common_neighbor_edges_cache[i]) == 0:
+                continue
+            results = list(map(lambda x: np.sqrt(sd_predictions[x[0]]*sd_predictions[x[1]]),common_neighbor_edges_cache))
+            neighbors_average[i] += sum(results) / len(results[i])
+        return neighbors_average
 
     def predict(self, X, indices):
         T, M = X.shape
