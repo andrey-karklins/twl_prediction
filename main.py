@@ -4,6 +4,7 @@ from grid_search import *
 import concurrent.futures
 import logging
 
+from models.BaseModel import BaseModel
 
 delta_ts_physical = [10 * M, 30 * M, 1 * H]
 delta_ts_virtual = [1 * H, 1 * D, 3 * D]
@@ -21,13 +22,13 @@ def generate_results(dataset, delta_ts, delta_ts_label):
     base_scores = []
     for delta_t in delta_ts:
         data, G = aggregate_to_matrix(dataset, delta_t)
-        # baseline_score = model_no_fit(data, BaseModel())
+        baseline_score = model_no_fit(data, BaseModel())
         # Grid search
-        # _, _, sd_results = grid_search_sdmodel(data, taus, Ls)
+        _, _, sd_results = grid_search_sdmodel(data, taus, Ls)
         _, _, scd_results = grid_search_scdmodel(data, taus, Ls, coefs, G)
 
-        # base_scores.append(baseline_score)
-        # top_sd_results.append(sorted(sd_results, key=lambda x: x[-1]['MSE'])[0])
+        base_scores.append(baseline_score)
+        top_sd_results.append(sorted(sd_results, key=lambda x: x[-1]['MSE'])[0])
         top_scd_results.append(sorted(scd_results, key=lambda x: x[-1]['MSE'])[0])
 
     # apply_fourier_transform(tmp_datasets, tmp_delta_ts, dataset.name, filename=f'results/plots/fourier_transform_{dataset.name}.png')
