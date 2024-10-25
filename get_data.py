@@ -194,7 +194,7 @@ def get_socio_sms():
             G.add_edge(int(node1), int(node2), timestamp=unix_from_str(timestamp), id=i)
             i += 1
     G.__setattr__("edges_list", list(set(map(lambda x: tuple(sorted(x)), G.edges()))))
-
+    _cache_neighbors(G)
     return G
 
 
