@@ -19,22 +19,25 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 def generate_results(dataset, delta_ts, delta_ts_label):
     top_sd_results = []
     top_scd_results = []
+    top_scdo_results = []
     base_scores = []
     for delta_t in delta_ts:
         data, G = aggregate_to_matrix(dataset, delta_t)
         baseline_score = model_no_fit(data, BaseModel())
         # Grid search
-        _, _, sd_results = grid_search_sdmodel(data, taus, Ls)
-        _, _, scd_results = grid_search_scdmodel(data, taus, Ls, coefs, G)
+        _, _, sd_results = grid_search_sd_model(data, taus, Ls)
+        _, _, scd_results = grid_search_scd_model(data, taus, Ls, coefs, G)
+        _, _, scdo_results = grid_search_scdo_model(data, taus, Ls, coefs, G)
 
         base_scores.append(baseline_score)
         top_sd_results.append(sorted(sd_results, key=lambda x: x[-1]['MSE'])[0])
         top_scd_results.append(sorted(scd_results, key=lambda x: x[-1]['MSE'])[0])
+        top_scdo_results.append(sorted(scdo_results, key=lambda x: x[-1]['MSE'])[0])
 
     # apply_fourier_transform(tmp_datasets, tmp_delta_ts, dataset.name, filename=f'results/plots/fourier_transform_{dataset.name}.png')
-    write_top1_results_to_file(top_sd_results, top_scd_results, base_scores, delta_ts, dataset.name,
+    write_top1_results_to_file(top_sd_results, top_scd_results, top_scdo_results, base_scores, delta_ts, dataset.name,
                                filename=f'results/{dataset.name}_results.txt')
-    write_results_to_csv(top_sd_results, top_scd_results, base_scores, delta_ts, dataset.name, filename='results/results.csv')
+    write_results_to_csv(top_sd_results, top_scd_results, top_scdo_results, base_scores, delta_ts, dataset.name, filename='results/results.csv')
 
 
 def load_or_fetch_dataset(fetch_func, pickle_filename):

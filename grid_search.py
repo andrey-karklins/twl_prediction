@@ -7,7 +7,7 @@ from cross_fold_validation import model_no_fit
 from get_data import *
 
 
-def grid_search_sdmodel(data, taus, Ls):
+def grid_search_sd_model(data, taus, Ls):
     best_score = float('inf')
     best_params = None
     results = []
@@ -26,7 +26,24 @@ def grid_search_sdmodel(data, taus, Ls):
     return best_params, best_score, results
 
 
-def grid_search_scdmodel(data, taus, Ls, coefs, G_global):
+def grid_search_scd_model(data, taus, Ls, coefs, G_global):
+    best_score = float('inf')
+    best_params = None
+    results = []
+    for tau in taus:
+        for L in Ls:
+            for coef in coefs:
+                coef_sum = sum(coef)
+                model = SCDModel(tau=tau, L=L, alpha=coef[0]/coef_sum, beta=coef[1]/coef_sum, gamma=coef[2]/coef_sum, G_global=G_global)
+                score = model_no_fit(data, model, threshold=300)
+                results.append((tau, L, coef, score))
+                print(f"tau: {tau}, L: {L}, coef: {coef}, MSE: {score['MSE']}, MAE: {score['MAE']}, RMSE: {score['RMSE']}, AUPRC: {score['AUPRC']}")
+                if score['MSE'] < best_score:
+                    best_score = score['MSE']
+                    best_params = (tau, L, coef)
+    return best_params, best_score, results
+
+def grid_search_scdo_model(data, taus, Ls, coefs, G_global):
     best_score = float('inf')
     best_params = None
     results = []
