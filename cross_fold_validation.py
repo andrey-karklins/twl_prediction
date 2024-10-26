@@ -42,7 +42,7 @@ def model_no_fit(data, model, threshold=0, activity_threshold=0.5):
 
     # Number of predictions to make
     num_predictions = T - L - 1
-
+    np.random.seed(42)
     # Select data indices for prediction based on threshold
     if threshold != 0 and num_predictions > threshold:
         indices = np.random.randint(L, T, threshold)

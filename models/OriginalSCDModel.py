@@ -27,12 +27,12 @@ class OriginalSCDModel:
         # No fitting process needed for SCDModel
         pass
 
-    def _get_common_neighbors_sum(self, sd_predictions, common_neighbor_edges_cache):
+    def _get_common_neighbors_sum(self, sd_predictions, common_neighbor_geometric_cache):
         neighbors_average = np.zeros(len(sd_predictions))
         for i in range(len(neighbors_average)):
-            if len(common_neighbor_edges_cache[i]) == 0:
+            if len(common_neighbor_geometric_cache[i]) == 0:
                 continue
-            results = list(map(lambda x: np.sqrt(sd_predictions[x[0]]*sd_predictions[x[1]]),common_neighbor_edges_cache))
+            results = list(map(lambda x: np.sqrt(sd_predictions[x[0]]*sd_predictions[x[1]]),common_neighbor_geometric_cache))
             neighbors_average[i] += sum(results) / len(results[i])
         return neighbors_average
 
@@ -49,8 +49,8 @@ class OriginalSCDModel:
                                                              self.G_global.neighbor_edges_cache)
 
             # Common neighbor-driven component
-            common_neighbor_driven = self.gamma * _get_neighbors_sum(self.sd_model_predictions_cache[i],
-                                                                     self.G_global.common_neighbor_edges_cache)
+            common_neighbor_driven = self.gamma * self._get_common_neighbors_sum(self.sd_model_predictions_cache[i],
+                                                                     self.G_global.common_neighbor_geometric_cache)
 
             # Total prediction for each link at time t
             total_driven = self_driven + neighbor_driven + common_neighbor_driven
