@@ -273,7 +273,7 @@ def _cache_neighbors(G):
                                  ]
         common_neighbor_edges_cache[edge_to_id[edge]] = np.array(common_neighbors_edges)
         common_neighbor_geometric_cache[edge_to_id[edge]] = np.array(
-            common_neighbors_edges[:len(common_neighbors_edges) // 2] + common_neighbors_edges[len(common_neighbors_edges) // 2:]
+            zip(common_neighbors_edges[:len(common_neighbors_edges) // 2], common_neighbors_edges[len(common_neighbors_edges) // 2:])
         )
     G.__setattr__("neighbor_edges_cache", neighbor_edges_cache)
     G.__setattr__("common_neighbor_edges_cache", common_neighbor_edges_cache)
