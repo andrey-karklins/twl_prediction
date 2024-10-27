@@ -272,7 +272,7 @@ def _cache_neighbors(G):
                                      if tuple(sorted((edge[1], cn))) in G.edges_list
                                  ]
         common_neighbor_edges_cache[edge_to_id[edge]] = np.array(common_neighbors_edges)
-        common_neighbor_geometric_cache[edge_to_id[edge]] = np.array(
+        common_neighbor_geometric_cache[edge_to_id[edge]] = list(
             zip(common_neighbors_edges[:len(common_neighbors_edges) // 2], common_neighbors_edges[len(common_neighbors_edges) // 2:])
         )
     G.__setattr__("neighbor_edges_cache", neighbor_edges_cache)

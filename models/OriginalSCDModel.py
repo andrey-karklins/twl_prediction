@@ -32,8 +32,8 @@ class OriginalSCDModel:
         for i in range(len(neighbors_average)):
             if len(common_neighbor_geometric_cache[i]) == 0:
                 continue
-            results = list(map(lambda x: np.sqrt(sd_predictions[x[0]]*sd_predictions[x[1]]),common_neighbor_geometric_cache))
-            neighbors_average[i] += sum(results) / len(results[i])
+            results = list(map(lambda x: np.sqrt(sd_predictions[x[0]]*sd_predictions[x[1]]),common_neighbor_geometric_cache[i]))
+            neighbors_average[i] += sum(results) / len(results)
         return neighbors_average
 
     def predict(self, X, indices):
