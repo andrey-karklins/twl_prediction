@@ -16,11 +16,12 @@ def get_hypertext():
         i = 0
         for line in file:
             node1, node2, _, timestamp = line.strip().split()  # Adjust split method based on your file's delimiter
-            G.add_edge(int(node1), int(node2), timestamp=int(timestamp), id = i)
+            G.add_edge(int(node1), int(node2), timestamp=int(timestamp), id=i)
             i += 1
     G.__setattr__("edges_list", list(set(map(lambda x: tuple(sorted(x)), G.edges()))))
     _cache_neighbors(G)
     return G
+
 
 def get_college():
     G = nx.MultiGraph(name="College graph original")  # Initialize an empty MultiGraph
@@ -224,7 +225,7 @@ def aggregate_into_snapshots(G, delta_t, step_t=None):
 
 
 def aggregate_to_matrix(G, delta_t):
-    edges = G.edges_list    
+    edges = G.edges_list
     timestamps = [data['timestamp'] for _, _, data in G.edges(data=True)]
     min_timestamp = min(timestamps)
     time_dict = {}
@@ -239,6 +240,7 @@ def aggregate_to_matrix(G, delta_t):
     for i, k in enumerate(sorted(time_dict.keys())):
         matrix[:, i] = time_dict[k]
     return matrix, G
+
 
 def _cache_neighbors(G):
     """Precompute and cache the neighbor edges for each edge."""
@@ -262,8 +264,8 @@ def _cache_neighbors(G):
             for neighbor in neighbors_1
             if neighbor != edge[0] and tuple(sorted((edge[1], neighbor))) in G.edges_list
         ]
-        neighbor_edges_cache_1[edge_to_id[edge]] = np.array(neighbors_0_edges)
-        neighbor_edges_cache_2[edge_to_id[edge]] = np.array(neighbors_1_edges)
+        neighbor_edges_cache_1[edge_to_id[edge]] = np.array(neighbors_0_edges, dtype=int)
+        neighbor_edges_cache_2[edge_to_id[edge]] = np.array(neighbors_1_edges, dtype=int)
         common_neighbors_edges = [
                                      edge_to_id[tuple(sorted((edge[0], cn)))]
                                      for cn in common_neighbors
@@ -273,12 +275,12 @@ def _cache_neighbors(G):
                                      for cn in common_neighbors
                                      if tuple(sorted((edge[1], cn))) in G.edges_list
                                  ]
-        common_neighbor_edges_cache[edge_to_id[edge]] = np.array(common_neighbors_edges)
-        common_neighbor_geometric_cache[edge_to_id[edge]] = list(
-            zip(common_neighbors_edges[:len(common_neighbors_edges) // 2], common_neighbors_edges[len(common_neighbors_edges) // 2:])
+        common_neighbor_edges_cache[edge_to_id[edge]] = np.array(common_neighbors_edges, dtype=int)
+        common_neighbor_geometric_cache[edge_to_id[edge]] = np.array(list(
+            zip(common_neighbors_edges[:len(common_neighbors_edges) // 2],
+                common_neighbors_edges[len(common_neighbors_edges) // 2:])), dtype=int
         )
-    G.__setattr__("neighbor_edges_cache_1", neighbor_edges_cache_1)
-    G.__setattr__("neighbor_edges_cache_2", neighbor_edges_cache_2)
-    G.__setattr__("common_neighbor_edges_cache", common_neighbor_edges_cache)
-    G.__setattr__("common_neighbor_geometric_cache", common_neighbor_geometric_cache)
-
+        G.__setattr__("neighbor_edges_cache_1", neighbor_edges_cache_1)
+        G.__setattr__("neighbor_edges_cache_2", neighbor_edges_cache_2)
+        G.__setattr__("common_neighbor_edges_cache", common_neighbor_edges_cache)
+        G.__setattr__("common_neighbor_geometric_cache", common_neighbor_geometric_cache)

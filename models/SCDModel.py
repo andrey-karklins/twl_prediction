@@ -1,24 +1,19 @@
 import numpy as np
-from concurrent.futures import ThreadPoolExecutor
 from models.SDModel import SDModel
 
 
 def _get_neighbors_sum(sd_predictions, neighbor_edges_cache_1, neighbor_edges_cache_2):
     neighbors_average = np.zeros(len(sd_predictions))
 
-    # Define a function to compute the average for a single neighbor index
-    def compute_average(i):
-        neighbors = list(neighbor_edges_cache_1[i]) + list(neighbor_edges_cache_2[i])
-        if len(neighbors) == 0:
-            return 0
-        return sd_predictions[neighbors].sum() / len(neighbors)
+    # Compute the average for each neighbor index sequentially
+    for i in range(len(neighbors_average)):
+        # Concatenate the two arrays instead of converting to lists
+        neighbors = np.concatenate((neighbor_edges_cache_1[i], neighbor_edges_cache_2[i]))
 
-    # Use ThreadPoolExecutor for parallel execution
-    with ThreadPoolExecutor() as executor:
-        results = executor.map(compute_average, range(len(neighbors_average)))
+        # If neighbors array is non-empty, compute the average
+        if neighbors.size > 0:
+            neighbors_average[i] = sd_predictions[neighbors].sum() / neighbors.size
 
-    # Gather results
-    neighbors_average = np.fromiter(results, dtype=np.float64)
     return neighbors_average
 
 
@@ -37,23 +32,21 @@ class SCDModel:
         # No fitting process needed for SCDModel
         pass
 
+    import numpy as np
+
     def _get_common_neighbors_sum(self, sd_predictions, common_neighbor_geometric_cache):
         neighbors_average = np.zeros(len(sd_predictions))
 
-        # Define a function to compute the geometric mean for a common neighbor index
-        def compute_geometric_average(i):
-            if len(common_neighbor_geometric_cache[i]) == 0:
-                return 0
-            results = list(
-                map(lambda x: np.sqrt(sd_predictions[x[0]] * sd_predictions[x[1]]), common_neighbor_geometric_cache[i]))
-            return sum(results) / len(results)
+        # Iterate over each possible index in order
+        for i in range(len(neighbors_average)):
+            if i in common_neighbor_geometric_cache and len(common_neighbor_geometric_cache[i]) > 0:
+                # Convert neighbors to a NumPy array of shape (n, 2) for vectorized access
+                neighbors = np.array(common_neighbor_geometric_cache[i])
+                # Use NumPy to index sd_predictions and calculate the square root of products
+                products = np.sqrt(sd_predictions[neighbors[:, 0]] * sd_predictions[neighbors[:, 1]])
+                # Assign the mean of products to the correct index
+                neighbors_average[i] = products.mean()
 
-        # Parallelize with ThreadPoolExecutor
-        with ThreadPoolExecutor() as executor:
-            results = executor.map(compute_geometric_average, range(len(neighbors_average)))
-
-        # Collect results
-        neighbors_average = np.fromiter(results, dtype=np.float64)
         return neighbors_average
 
     def predict(self, X, indices):
@@ -63,31 +56,26 @@ class SCDModel:
         # Cache predictions from SDModel
         self.sd_model_predictions_cache = self.SDModel.predict(X, indices)
 
-        # Define function to compute predictions for a single time index
-        def compute_prediction(i, t):
+        # Compute predictions for each time index sequentially
+        for i, t in enumerate(indices):
             # Self-driven component
             self_driven = self.alpha * self.sd_model_predictions_cache[i]
 
             # Neighbor-driven component
             neighbor_driven = self.beta * _get_neighbors_sum(
-                self.sd_model_predictions_cache[i], self.G_global.neighbor_edges_cache_1, self.G_global.neighbor_edges_cache_1
+                self.sd_model_predictions_cache[i],
+                self.G_global.neighbor_edges_cache_1,
+                self.G_global.neighbor_edges_cache_2
             )
 
             # Common neighbor-driven component
             common_neighbor_driven = self.gamma * self._get_common_neighbors_sum(
-                self.sd_model_predictions_cache[i], self.G_global.common_neighbor_geometric_cache
+                self.sd_model_predictions_cache[i],
+                self.G_global.common_neighbor_geometric_cache
             )
 
             # Total prediction for each link at time t
             total_driven = self_driven + neighbor_driven + common_neighbor_driven
-            return total_driven
-
-        # Parallelize the prediction computations for each time index
-        with ThreadPoolExecutor() as executor:
-            results = executor.map(lambda idx_t: compute_prediction(*idx_t), enumerate(indices))
-
-        # Collect the results
-        for i, result in enumerate(results):
-            predictions[i] = result
+            predictions[i] = total_driven
 
         return predictions
