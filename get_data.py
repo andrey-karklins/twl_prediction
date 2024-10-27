@@ -243,7 +243,8 @@ def aggregate_to_matrix(G, delta_t):
 def _cache_neighbors(G):
     """Precompute and cache the neighbor edges for each edge."""
     common_neighbor_edges_cache = {}
-    neighbor_edges_cache = {}
+    neighbor_edges_cache_1 = {}
+    neighbor_edges_cache_2 = {}
     common_neighbor_geometric_cache = {}
     edge_to_id = {edge: i for i, edge in enumerate(G.edges_list)}
     for edge in G.edges_list:
@@ -261,7 +262,8 @@ def _cache_neighbors(G):
             for neighbor in neighbors_1
             if neighbor != edge[0] and tuple(sorted((edge[1], neighbor))) in G.edges_list
         ]
-        neighbor_edges_cache[edge_to_id[edge]] = np.array(neighbors_0_edges + neighbors_1_edges)
+        neighbor_edges_cache_1[edge_to_id[edge]] = np.array(neighbors_0_edges)
+        neighbor_edges_cache_2[edge_to_id[edge]] = np.array(neighbors_1_edges)
         common_neighbors_edges = [
                                      edge_to_id[tuple(sorted((edge[0], cn)))]
                                      for cn in common_neighbors
@@ -275,7 +277,8 @@ def _cache_neighbors(G):
         common_neighbor_geometric_cache[edge_to_id[edge]] = list(
             zip(common_neighbors_edges[:len(common_neighbors_edges) // 2], common_neighbors_edges[len(common_neighbors_edges) // 2:])
         )
-    G.__setattr__("neighbor_edges_cache", neighbor_edges_cache)
+    G.__setattr__("neighbor_edges_cache_1", neighbor_edges_cache_1)
+    G.__setattr__("neighbor_edges_cache_2", neighbor_edges_cache_2)
     G.__setattr__("common_neighbor_edges_cache", common_neighbor_edges_cache)
     G.__setattr__("common_neighbor_geometric_cache", common_neighbor_geometric_cache)
 

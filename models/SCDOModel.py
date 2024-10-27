@@ -3,26 +3,11 @@ from concurrent.futures import ThreadPoolExecutor
 from models.SDModel import SDModel
 
 
-def _get_neighbors_sum(sd_predictions, neighbor_edges_cache_1, neighbor_edges_cache_2):
-    neighbors_average = np.zeros(len(sd_predictions))
+def geo_mean(iterable):
+    a = np.array(iterable)
+    return a.prod()**(1.0/len(a))
 
-    # Define a function to compute the average for a single neighbor index
-    def compute_average(i):
-        neighbors = list(neighbor_edges_cache_1[i]) + list(neighbor_edges_cache_2[i])
-        if len(neighbors) == 0:
-            return 0
-        return sd_predictions[neighbors].sum() / len(neighbors)
-
-    # Use ThreadPoolExecutor for parallel execution
-    with ThreadPoolExecutor() as executor:
-        results = executor.map(compute_average, range(len(neighbors_average)))
-
-    # Gather results
-    neighbors_average = np.fromiter(results, dtype=np.float64)
-    return neighbors_average
-
-
-class SCDModel:
+class SCDOModel:
     def __init__(self, tau, L, alpha, beta, gamma, G_global):
         self.tau = tau  # Decay factor
         self.L = L  # Number of past time steps to consider
@@ -36,6 +21,28 @@ class SCDModel:
     def fit(self, X, y=None):
         # No fitting process needed for SCDModel
         pass
+
+    def _get_neighbors_sum(self, sd_predictions, neighbor_edges_cache_1, neighbor_edges_cache_2):
+        neighbors_average = np.zeros(len(sd_predictions))
+
+        # Define a function to compute the average for a single neighbor index
+        def compute_average(i):
+            neighbors_1 = 0
+            if len(neighbor_edges_cache_1[i]) != 0:
+                neighbors_1 = geo_mean(sd_predictions[list(neighbor_edges_cache_1[i])])
+            neighbors_2 = 0
+            if len(neighbor_edges_cache_2[i]) != 0:
+                neighbors_2 = geo_mean(sd_predictions[list(neighbor_edges_cache_2[i])])
+
+            return (neighbors_1 + neighbors_2) / 2
+
+        # Use ThreadPoolExecutor for parallel execution
+        with ThreadPoolExecutor() as executor:
+            results = executor.map(compute_average, range(len(neighbors_average)))
+
+        # Gather results
+        neighbors_average = np.fromiter(results, dtype=np.float64)
+        return neighbors_average
 
     def _get_common_neighbors_sum(self, sd_predictions, common_neighbor_geometric_cache):
         neighbors_average = np.zeros(len(sd_predictions))
@@ -69,8 +76,8 @@ class SCDModel:
             self_driven = self.alpha * self.sd_model_predictions_cache[i]
 
             # Neighbor-driven component
-            neighbor_driven = self.beta * _get_neighbors_sum(
-                self.sd_model_predictions_cache[i], self.G_global.neighbor_edges_cache_1, self.G_global.neighbor_edges_cache_1
+            neighbor_driven = self.beta * self._get_neighbors_sum(
+                self.sd_model_predictions_cache[i], self.G_global.neighbor_edges_cache_1, self.G_global.neighbor_edges_cache_2
             )
 
             # Common neighbor-driven component

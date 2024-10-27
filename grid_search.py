@@ -1,7 +1,7 @@
 import csv
 
-from models.OriginalSCDModel import OriginalSCDModel
 from models.SCDModel import SCDModel
+from models.SCDOModel import SCDOModel
 from models.SDModel import SDModel
 from cross_fold_validation import model_no_fit
 from get_data import *
@@ -51,7 +51,7 @@ def grid_search_scdo_model(data, taus, Ls, coefs, G_global):
         for L in Ls:
             for coef in coefs:
                 coef_sum = sum(coef)
-                model = OriginalSCDModel(tau=tau, L=L, alpha=coef[0]/coef_sum, beta=coef[1]/coef_sum, gamma=coef[2]/coef_sum, G_global=G_global)
+                model = SCDOModel(tau=tau, L=L, alpha=coef[0]/coef_sum, beta=coef[1]/coef_sum, gamma=coef[2]/coef_sum, G_global=G_global)
                 score = model_no_fit(data, model, threshold=300)
                 results.append((tau, L, coef, score))
                 print(f"tau: {tau}, L: {L}, coef: {coef}, MSE: {score['MSE']}, MAE: {score['MAE']}, RMSE: {score['RMSE']}, AUPRC: {score['AUPRC']}")
@@ -60,14 +60,14 @@ def grid_search_scdo_model(data, taus, Ls, coefs, G_global):
                     best_params = (tau, L, coef)
     return best_params, best_score, results
 
-def write_top1_results_to_file(sd_results, scd_results, scd_orig_results, baseline_scores, delta_ts, dataset_name, filename='combined_results.txt'):
+def write_top1_results_to_file(sd_results, scd_results, scdo_results, baseline_scores, delta_ts, dataset_name, filename='combined_results.txt'):
     with open(filename, 'w') as file:
-        for (sd_res, scd_res, scd_orig_res, base_score, delta_t) in zip(sd_results, scd_results, scd_orig_results, baseline_scores, delta_ts):
+        for (sd_res, scd_res, scd_orig_res, base_score, delta_t) in zip(sd_results, scd_results, scdo_results, baseline_scores, delta_ts):
             file.write(f"Dataset: {dataset_name}, Delta_t: {seconds_to_human_readable(delta_t)}\n")
             file.write(f"Baseline model - MSE: {base_score['MSE']}, MAE: {base_score['MAE']}, RMSE: {base_score['RMSE']}, AUPRC: {base_score['AUPRC']}\n")
             file.write(f"SDModel - MSE: {sd_res[2]['MSE']}, MAE: {sd_res[2]['MAE']}, RMSE: {sd_res[2]['RMSE']}, AUPRC: {sd_res[2]['AUPRC']} | tau: {sd_res[0]}, L: {sd_res[1]} |\n")
             file.write(f"SCDModel - MSE: {scd_res[3]['MSE']}, MAE: {scd_res[3]['MAE']}, RMSE: {scd_res[3]['RMSE']}, AUPRC: {scd_res[3]['AUPRC']} | tau: {scd_res[0]}, L: {scd_res[1]}, coef: {scd_res[2]} |\n")
-            file.write(f"SCDOModel - MSE: {scd_orig_res[3]['MSE']}, MAE: {scd_orig_res[3]['MAE']}, RMSE: {scd_orig_res[3]['RMSE']}, AUPRC: {scd_orig_res[3]['AUPRC']} | tau: {scd_orig_res[0]}, L: {scd_orig_res[1]}, coef: {scd_orig_res[2]} |\n")
+            file.write(f"SCDOModel - MSE: {scdo_results[3]['MSE']}, MAE: {scdo_results[3]['MAE']}, RMSE: {scdo_results[3]['RMSE']}, AUPRC: {scdo_results[3]['AUPRC']} | tau: {scdo_results[0]}, L: {scdo_results[1]}, coef: {scdo_results[2]} |\n")
             file.write(f"-----------------------------------------------------------------------------------\n")
 
 
@@ -101,7 +101,7 @@ def write_results_to_csv(sd_results, scd_results, scd_orig_results, baseline_sco
                 print(f"Header written to {filename}")
 
             # Write each result set to the CSV file
-            for (sd_res, scd_res, scd_orig_res, base_score, delta_t) in zip(sd_results, scd_results, scd_orig_results, baseline_scores, delta_ts):
+            for (sd_res, scd_res, scdo_results, base_score, delta_t) in zip(sd_results, scd_results, scd_orig_results, baseline_scores, delta_ts):
                 print(f"Writing results for dataset {dataset_name} with delta_t {delta_t}")
                 writer.writerow([
                     dataset_name,
@@ -114,10 +114,10 @@ def write_results_to_csv(sd_results, scd_results, scd_orig_results, baseline_sco
                     scd_res[0],  # SCDModel tau
                     scd_res[1],  # SCDModel L
                     scd_res[2],  # SCDModel coefficients (alpha, beta, gamma)
-                    scd_orig_res[3]['MSE'], scd_orig_res[3]['MAE'], scd_orig_res[3]['RMSE'], scd_orig_res[3]['AUPRC'],  # SCDOModel metrics
-                    scd_orig_res[0],  # SCDOModel tau
-                    scd_orig_res[1],  # SCDOModel L
-                    scd_orig_res[2]  # SCDOModel coefficients (alpha, beta, gamma)
+                    scdo_results[3]['MSE'], scdo_results[3]['MAE'], scdo_results[3]['RMSE'], scdo_results[3]['AUPRC'],  # SCDOModel metrics
+                    scdo_results[0],  # SCDOModel tau
+                    scdo_results[1],  # SCDOModel L
+                    scdo_results[2]  # SCDOModel coefficients (alpha, beta, gamma)
                 ])
             print(f"Results written to {filename}")
 

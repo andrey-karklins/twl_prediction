@@ -32,7 +32,6 @@ def generate_results(dataset, delta_ts, delta_ts_label):
         base_scores.append(baseline_score)
         top_sd_results.append(sorted(sd_results, key=lambda x: x[-1]['MSE'])[0])
         top_scd_results.append(sorted(scd_results, key=lambda x: x[-1]['MSE'])[0])
-        top_scdo_results.append(sorted(scdo_results, key=lambda x: x[-1]['MSE'])[0])
 
     # apply_fourier_transform(tmp_datasets, tmp_delta_ts, dataset.name, filename=f'results/plots/fourier_transform_{dataset.name}.png')
     write_top1_results_to_file(top_sd_results, top_scd_results, top_scdo_results, base_scores, delta_ts, dataset.name,
