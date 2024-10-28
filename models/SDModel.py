@@ -1,6 +1,5 @@
 import numpy as np
 
-
 class SDModel:
     def __init__(self, tau, L):
         self.tau = tau  # Decay factor

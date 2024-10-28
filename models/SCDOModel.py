@@ -1,8 +1,31 @@
 import numpy as np
-from scipy.stats import gmean
-
 from models.SDModel import SDModel
-from utils import geo_mean
+
+
+def _get_common_neighbors_sum(sd_predictions, common_neighbor_geometric_cache):
+    neighbors_average = np.zeros(len(sd_predictions))
+
+    # Iterate over each possible index in order
+    for i in range(len(neighbors_average)):
+        if i in common_neighbor_geometric_cache and len(common_neighbor_geometric_cache[i]) > 0:
+            # Convert neighbors to a NumPy array of shape (n, 2) for vectorized access
+            neighbors = np.array(common_neighbor_geometric_cache[i])
+            # Use NumPy to index sd_predictions and calculate the square root of products
+            products = np.sqrt(sd_predictions[neighbors[:, 0]] * sd_predictions[neighbors[:, 1]])
+            # Assign the mean of products to the correct index
+            neighbors_average[i] = products.mean()
+
+    return neighbors_average
+
+
+def _get_neighbors_sum(sd_predictions, neighbor_edges_cache_1, neighbor_edges_cache_2):
+    neighbors_average = np.zeros(len(sd_predictions))
+
+    # Compute the average for each neighbor index sequentially
+    for i in range(len(neighbors_average)):
+        neighbors_average[i] = np.sqrt(
+            np.mean(sd_predictions[neighbor_edges_cache_1[i]]) * np.mean(sd_predictions[neighbor_edges_cache_2[i]]))
+    return neighbors_average
 
 
 class SCDOModel:
@@ -20,33 +43,7 @@ class SCDOModel:
         # No fitting process needed for SCDOModel
         pass
 
-    def _get_neighbors_sum(self, sd_predictions, neighbor_edges_cache_1, neighbor_edges_cache_2):
-        neighbors_average = np.zeros(len(sd_predictions))
-
-        # Compute the average for each neighbor index sequentially
-        for i in range(len(neighbors_average)):
-            neighbors_1 = geo_mean(sd_predictions[neighbor_edges_cache_1[i]]) if len(neighbor_edges_cache_1[i]) > 0 else 0
-            neighbors_2 = geo_mean(sd_predictions[neighbor_edges_cache_2[i]]) if len(neighbor_edges_cache_2[i]) > 0 else 0
-            neighbors_average[i] = (neighbors_1 + neighbors_2) / 2
-
-        return neighbors_average
-
     import numpy as np
-
-    def _get_common_neighbors_sum(self, sd_predictions, common_neighbor_geometric_cache):
-        neighbors_average = np.zeros(len(sd_predictions))
-
-        # Iterate over each possible index in order
-        for i in range(len(neighbors_average)):
-            if i in common_neighbor_geometric_cache and len(common_neighbor_geometric_cache[i]) > 0:
-                # Convert neighbors to a NumPy array of shape (n, 2) for vectorized access
-                neighbors = np.array(common_neighbor_geometric_cache[i])
-                # Use NumPy to index sd_predictions and calculate the square root of products
-                products = np.sqrt(sd_predictions[neighbors[:, 0]] * sd_predictions[neighbors[:, 1]])
-                # Assign the mean of products to the correct index
-                neighbors_average[i] = products.mean()
-
-        return neighbors_average
 
     def predict(self, X, indices):
         T, M = X.shape
@@ -61,14 +58,14 @@ class SCDOModel:
             self_driven = self.alpha * self.sd_model_predictions_cache[i]
 
             # Neighbor-driven component
-            neighbor_driven = self.beta * self._get_neighbors_sum(
+            neighbor_driven = self.beta * _get_neighbors_sum(
                 self.sd_model_predictions_cache[i],
                 self.G_global.neighbor_edges_cache_1,
                 self.G_global.neighbor_edges_cache_2
             )
 
             # Common neighbor-driven component
-            common_neighbor_driven = self.gamma * self._get_common_neighbors_sum(
+            common_neighbor_driven = self.gamma * _get_common_neighbors_sum(
                 self.sd_model_predictions_cache[i],
                 self.G_global.common_neighbor_geometric_cache
             )
