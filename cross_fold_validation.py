@@ -34,7 +34,7 @@ def temporal_cross_validation(data, model, n_splits=5, metric=mean_squared_error
     return scores, average_score
 
 
-def model_no_fit(data, model, threshold=0, activity_threshold=0.5):
+def model_no_fit(data, model, threshold=0, activity_threshold=1):
     # Transpose the data to (T, M) format (time steps first)
     data = data.T
     T = data.shape[0]
@@ -59,8 +59,8 @@ def model_no_fit(data, model, threshold=0, activity_threshold=0.5):
     rmse = np.sqrt(mse)
 
     # Convert predictions and true values to binary (active/inactive) based on activity_threshold
-    predicted_active = (predictions.ravel() > activity_threshold).astype(int)
-    true_active = (y_test.ravel() > activity_threshold).astype(int)
+    predicted_active = (predictions.ravel() >= activity_threshold).astype(int)
+    true_active = (y_test.ravel() >= activity_threshold).astype(int)
 
     # Precision-Recall Curve and Area Under Precision-Recall Curve (AUPRC)
     precision, recall, _ = precision_recall_curve(true_active, predicted_active)
