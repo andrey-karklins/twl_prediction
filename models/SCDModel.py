@@ -37,8 +37,8 @@ class SCDModel:
         self.tau = tau  # Decay factor
         self.L = L  # Number of past time steps to consider
         self.alpha = alpha  # Weight for self-driven component
-        self.beta = beta  # Weight for neighbor-driven component
-        self.gamma = gamma  # Weight for common neighbor-driven component
+        self.beta = beta  # Weight for common neighbor-driven component
+        self.gamma = gamma  # Weight for distinct neighbor-driven component
         self.G_global = G_global  # The global graph structure
         self.SDModel = SDModel(tau, L)
         self.sd_model_predictions_cache = None
@@ -61,17 +61,17 @@ class SCDModel:
             # Self-driven component
             self_driven = self.alpha * self.sd_model_predictions_cache[i]
 
+            # Common neighbor-driven component
+            common_neighbor_driven = self.beta * _get_common_neighbors_sum(
+                self.sd_model_predictions_cache[i],
+                self.G_global.common_neighbor_geometric_cache
+            )
+
             # Neighbor-driven component
-            neighbor_driven = self.beta * _get_neighbors_sum(
+            neighbor_driven = self.gamma * _get_neighbors_sum(
                 self.sd_model_predictions_cache[i],
                 self.G_global.neighbor_edges_cache_1,
                 self.G_global.neighbor_edges_cache_2
-            )
-
-            # Common neighbor-driven component
-            common_neighbor_driven = self.gamma * _get_common_neighbors_sum(
-                self.sd_model_predictions_cache[i],
-                self.G_global.common_neighbor_geometric_cache
             )
 
             # Total prediction for each link at time t

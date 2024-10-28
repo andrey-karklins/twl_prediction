@@ -15,7 +15,6 @@ delta_ts_virtual = [1 * H, 1 * D, 3 * D]
 
 import csv
 import numpy as np
-import networkx as nx
 
 # Function to calculate and write aggregated properties
 def get_aggregated_properties(matrix, global_G, dataset_name, delta_t, output_file):

@@ -7,9 +7,7 @@ from cross_fold_validation import model_no_fit
 from get_data import *
 
 
-def grid_search_sd_model(data, taus, Ls):
-    best_score = float('inf')
-    best_params = None
+def grid_search_sd_model(data, taus, Ls, G_global):
     results = []
 
     model = SDModel(tau=taus[0], L=Ls[0])
@@ -19,18 +17,13 @@ def grid_search_sd_model(data, taus, Ls):
             model.tau = tau
             model.L = L
             score = model_no_fit(data, model)
+            print(f"SCD | {G_global.name} | tau={tau}, L={L}")
             results.append((tau, L, score))
 
-            if score['MSE'] < best_score:
-                best_score = score['MSE']
-                best_params = (tau, L)
-
-    return best_params, best_score, results
+    return results
 
 
 def grid_search_scd_model(data, taus, Ls, coefs, G_global):
-    best_score = float('inf')
-    best_params = None
     results = []
 
     def search_task(tau, L, coef):
@@ -38,23 +31,17 @@ def grid_search_scd_model(data, taus, Ls, coefs, G_global):
         score = model_no_fit(data, model, threshold=300)
         return tau, L, coef, score
 
-    with ThreadPoolExecutor(max_workers=12) as executor:
+    with ThreadPoolExecutor(max_workers=20) as executor:
         futures = [executor.submit(search_task, tau, L, coef) for tau in taus for L in Ls for coef in coefs]
-
         for future in as_completed(futures):
             tau, L, coef, score = future.result()
+            print(f"SCD | {G_global.name} | tau={tau}, L={L}, coef={coef}")
             results.append((tau, L, coef, score))
 
-            if score['MSE'] < best_score:
-                best_score = score['MSE']
-                best_params = (tau, L, coef)
-
-    return best_params, best_score, results
+    return results
 
 
 def grid_search_scdo_model(data, taus, Ls, coefs, G_global):
-    best_score = float('inf')
-    best_params = None
     results = []
 
     def search_task(tau, L, coef):
@@ -62,18 +49,15 @@ def grid_search_scdo_model(data, taus, Ls, coefs, G_global):
         score = model_no_fit(data, model, threshold=300)
         return tau, L, coef, score
 
-    with ThreadPoolExecutor(max_workers=12) as executor:
+    with ThreadPoolExecutor(max_workers=20) as executor:
         futures = [executor.submit(search_task, tau, L, coef) for tau in taus for L in Ls for coef in coefs]
 
         for future in as_completed(futures):
             tau, L, coef, score = future.result()
+            print(f"SCDO | {G_global.name} | tau={tau}, L={L}, coef={coef}")
             results.append((tau, L, coef, score))
 
-            if score['MSE'] < best_score:
-                best_score = score['MSE']
-                best_params = (tau, L, coef)
-
-    return best_params, best_score, results
+    return results
 
 
 def write_results_to_csv(sd_res, scd_res, scdo_res, base_score, delta_t, dataset_name, filename='results/results.csv'):
