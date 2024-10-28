@@ -1,5 +1,4 @@
 import csv
-import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from models.SCDModel import SCDModel
 from models.SCDOModel import SCDOModel
