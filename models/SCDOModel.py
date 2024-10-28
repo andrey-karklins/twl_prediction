@@ -23,6 +23,15 @@ def _get_neighbors_sum(sd_predictions, neighbor_edges_cache_1, neighbor_edges_ca
 
     # Compute the average for each neighbor index sequentially
     for i in range(len(neighbors_average)):
+        if len(neighbor_edges_cache_1[i]) == 0 and len(neighbor_edges_cache_2[i]) == 0:
+            neighbors_average[i] = 0
+            continue
+        if len(neighbor_edges_cache_1[i]) == 0:
+            neighbors_average[i] = np.mean(sd_predictions[neighbor_edges_cache_2[i]])
+            continue
+        if len(neighbor_edges_cache_2[i]) == 0:
+            neighbors_average[i] = np.mean(sd_predictions[neighbor_edges_cache_1[i]])
+            continue
         neighbors_average[i] = np.sqrt(
             np.mean(sd_predictions[neighbor_edges_cache_1[i]]) * np.mean(sd_predictions[neighbor_edges_cache_2[i]]))
     return neighbors_average
