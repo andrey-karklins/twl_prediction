@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-from main import delta_ts_physical, delta_ts_virtual, datasets_physical, datasets_virtual
 from utils import seconds_to_human_readable
 
 
@@ -13,7 +12,7 @@ def plot_comparison_grid(results_csv):
     # Define the datasets and delta_t values for physical and virtual types in the desired order
     datasets_physical_names = list(map(lambda G: G.name, datasets_physical))
     datasets_virtual_names = list(map(lambda G: G.name, datasets_virtual))
-    metrics = ['MSE', 'MAE', 'RMSE', 'AUPRC']
+    metrics = ['MSE', 'AUPRC']
 
     # Store the sorted order of datasets for each dataset type after sorting by the smallest delta_t
     sorted_order_physical = {}

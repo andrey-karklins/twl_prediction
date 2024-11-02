@@ -9,7 +9,6 @@ from get_data import *
 
 def grid_search_sd_model(data, taus, Ls, G_global):
     results = []
-
     model = SDModel(tau=taus[0], L=Ls[0])
 
     for tau in taus:
@@ -17,7 +16,7 @@ def grid_search_sd_model(data, taus, Ls, G_global):
             model.tau = tau
             model.L = L
             score = model_no_fit(data, model)
-            print(f"SCD | {G_global.name} | tau={tau}, L={L}")
+            print(f"SDModel | {G_global.name} | tau={tau}, L={L}")
             results.append((tau, L, score))
 
     return results
@@ -35,7 +34,7 @@ def grid_search_scd_model(data, taus, Ls, coefs, G_global):
         futures = [executor.submit(search_task, tau, L, coef) for tau in taus for L in Ls for coef in coefs]
         for future in as_completed(futures):
             tau, L, coef, score = future.result()
-            print(f"SCD | {G_global.name} | tau={tau}, L={L}, coef={coef}")
+            print(f"SCDModel | {G_global.name} | tau={tau}, L={L}, coef={coef}")
             results.append((tau, L, coef, score))
 
     return results
@@ -51,10 +50,9 @@ def grid_search_scdo_model(data, taus, Ls, coefs, G_global):
 
     with ThreadPoolExecutor(max_workers=20) as executor:
         futures = [executor.submit(search_task, tau, L, coef) for tau in taus for L in Ls for coef in coefs]
-
         for future in as_completed(futures):
             tau, L, coef, score = future.result()
-            print(f"SCDO | {G_global.name} | tau={tau}, L={L}, coef={coef}")
+            print(f"SCDOModel | {G_global.name} | tau={tau}, L={L}, coef={coef}")
             results.append((tau, L, coef, score))
 
     return results
@@ -62,12 +60,10 @@ def grid_search_scdo_model(data, taus, Ls, coefs, G_global):
 
 def write_results_to_csv(sd_res, scd_res, scdo_res, base_score, delta_t, dataset_name, filename='results/results.csv'):
     header = [
-        'Dataset name', 'delta_t', 'Baseline MSE', 'Baseline MAE', 'Baseline RMSE', 'Baseline AUPRC',
-        'SDModel MSE', 'SDModel MAE', 'SDModel RMSE', 'SDModel AUPRC', 'SDModel tau', 'SDModel L',
-        'SCDModel MSE', 'SCDModel MAE', 'SCDModel RMSE', 'SCDModel AUPRC', 'SCDModel tau', 'SCDModel L',
-        'SCDModel coefs',
-        'SCDOModel MSE', 'SCDOModel MAE', 'SCDOModel RMSE', 'SCDOModel AUPRC', 'SCDOModel tau', 'SCDOModel L',
-        'SCDOModel coefs'
+        'Dataset name', 'delta_t', 'Baseline MSE', 'Baseline AUPRC',
+        'SDModel MSE', 'SDModel AUPRC', 'SDModel tau', 'SDModel L',
+        'SCDModel MSE', 'SCDModel AUPRC', 'SCDModel tau', 'SCDModel L', 'SCDModel coefs',
+        'SCDOModel MSE', 'SCDOModel AUPRC', 'SCDOModel tau', 'SCDOModel L', 'SCDOModel coefs'
     ]
 
     try:
@@ -78,13 +74,10 @@ def write_results_to_csv(sd_res, scd_res, scdo_res, base_score, delta_t, dataset
                 writer.writerow(header)
             writer.writerow([
                 dataset_name, delta_t,
-                base_score['MSE'], base_score['MAE'], base_score['RMSE'], base_score['AUPRC'],
-                sd_res[2]['MSE'], sd_res[2]['MAE'], sd_res[2]['RMSE'], sd_res[2]['AUPRC'],
-                sd_res[0], sd_res[1],
-                scd_res[3]['MSE'], scd_res[3]['MAE'], scd_res[3]['RMSE'], scd_res[3]['AUPRC'],
-                scd_res[0], scd_res[1], scd_res[2],
-                scdo_res[3]['MSE'], scdo_res[3]['MAE'], scdo_res[3]['RMSE'], scdo_res[3]['AUPRC'],
-                scdo_res[0], scdo_res[1], scdo_res[2]
+                base_score['MSE'], base_score['AUPRC'],
+                sd_res[2]['MSE'], sd_res[2]['AUPRC'], sd_res[0], sd_res[1],
+                scd_res[3]['MSE'], scd_res[3]['AUPRC'], scd_res[0], scd_res[1], scd_res[2],
+                scdo_res[3]['MSE'], scdo_res[3]['AUPRC'], scdo_res[0], scdo_res[1], scdo_res[2]
             ])
     except Exception as e:
         print(f"Error writing to CSV file: {e}")

@@ -5,15 +5,15 @@ from get_data import aggregate_to_matrix, get_hypertext, get_SFHH, get_college_1
     get_socio_sms
 from grid_search import write_results_to_csv, grid_search_scdo_model, grid_search_scd_model, grid_search_sd_model
 from models.BaseModel import BaseModel
-from utils import load_or_fetch_dataset, H, M, D
+from utils import load_or_fetch_dataset, H, M, D, load_completed_tasks
 
 # Parameter definitions
 delta_ts_physical = [10 * M, 30 * M, 1 * H]
 delta_ts_virtual = [1 * H, 1 * D, 3 * D]
 taus = [0.1, 0.5, 1, 3]
 Ls = [1, 3, 5, 10]
-coefs = [(0.8, 0.2, 0), (0.8, 0.2, 0), (0.8, 0.1, 0.1),
-         (0.6, 0.4, 0), (0.6, 0.3, 0.1), (0.6, 0.2, 0.2), (0.6, 0.1, 0.3), (0.6, 0.4, 0),
+coefs = [(0.8, 0.2, 0), (0.8, 0.1, 0.1), (0.8, 0, 0.2),
+         (0.6, 0.4, 0), (0.6, 0.3, 0.1), (0.6, 0.2, 0.2), (0.6, 0.1, 0.3), (0.6, 0, 0.4),
          (0.4, 0.5, 0.1), (0.4, 0.4, 0.2), (0.4, 0.3, 0.3), (0.4, 0.2, 0.4), (0.4, 0.1, 0.5),
          (0.2, 0.6, 0.2), (0.2, 0.4, 0.4), (0.2, 0.2, 0.6)]
 
@@ -51,9 +51,20 @@ def main():
         load_or_fetch_dataset(get_socio_sms, 'pickles/socio_sms.pkl')
     ]
 
+    # Load completed tasks
+    completed_tasks = load_completed_tasks()
+
     # Combine all datasets and delta_t values into a single list of tasks
-    tasks = [(dataset, delta_t) for dataset in datasets_physical for delta_t in delta_ts_physical] + \
-            [(dataset, delta_t) for dataset in datasets_virtual for delta_t in delta_ts_virtual]
+    all_tasks = [(dataset, delta_t) for dataset in datasets_physical for delta_t in delta_ts_physical] + \
+                [(dataset, delta_t) for dataset in datasets_virtual for delta_t in delta_ts_virtual]
+
+    # Filter out tasks that are already completed
+    tasks = [(dataset, delta_t) for dataset, delta_t in all_tasks
+             if (dataset.name, delta_t) not in completed_tasks]
+
+    if not tasks:
+        logging.info("All tasks have already been completed.")
+        return
 
     # Run tasks concurrently
     with ProcessPoolExecutor(max_workers=12) as executor:  # Adjust max_workers as per CPU capacity

@@ -1,33 +1,43 @@
 import numpy as np
 from models.SDModel import SDModel
 
-def _get_neighbors_sum(sd_predictions, neighbor_edges_cache_1, neighbor_edges_cache_2):
+def _get_common_neighbors_sum(sd_predictions, common_neighbor_geometric_cache):
     neighbors_average = np.zeros(len(sd_predictions))
 
-    # Compute the average for each neighbor index sequentially
-    for i in range(len(neighbors_average)):
-        # Concatenate the two arrays instead of converting to lists
-        neighbors = np.concatenate((neighbor_edges_cache_1[i], neighbor_edges_cache_2[i]))
-
-        # If neighbors array is non-empty, compute the average
-        if neighbors.size > 0:
-            neighbors_average[i] = sd_predictions[neighbors].sum() / neighbors.size
+    # Iterate only over indices with non-empty neighbor lists
+    for i, neighbors in common_neighbor_geometric_cache.items():
+        if len(neighbors) > 0:
+            neighbors = np.array(neighbors)  # Convert once for each non-empty entry
+            # Vectorized computation of the geometric means of neighbors' predictions
+            products = np.sqrt(sd_predictions[neighbors[:, 0]] * sd_predictions[neighbors[:, 1]])
+            # Compute the mean of products directly for this index
+            neighbors_average[i] = np.mean(products)
 
     return neighbors_average
 
 
-def _get_common_neighbors_sum(sd_predictions, common_neighbor_geometric_cache):
+def _get_neighbors_sum(sd_predictions, neighbor_edges_cache_1, neighbor_edges_cache_2):
     neighbors_average = np.zeros(len(sd_predictions))
 
-    # Iterate over each possible index in order
+    # Iterate only over indices where either cache has neighbors
     for i in range(len(neighbors_average)):
-        if i in common_neighbor_geometric_cache and len(common_neighbor_geometric_cache[i]) > 0:
-            # Convert neighbors to a NumPy array of shape (n, 2) for vectorized access
-            neighbors = np.array(common_neighbor_geometric_cache[i])
-            # Use NumPy to index sd_predictions and calculate the square root of products
-            products = np.sqrt(sd_predictions[neighbors[:, 0]] * sd_predictions[neighbors[:, 1]])
-            # Assign the mean of products to the correct index
-            neighbors_average[i] = products.mean()
+        neighbors_1 = neighbor_edges_cache_1.get(i, [])
+        neighbors_2 = neighbor_edges_cache_2.get(i, [])
+
+        # If both are empty, skip this index
+        if len(neighbors_1) == 0 and len(neighbors_2) == 0:
+            continue
+
+        # Concatenate only non-empty arrays for efficiency
+        if len(neighbors_1) > 0 and len(neighbors_2) > 0:
+            neighbors = np.concatenate((neighbors_1, neighbors_2))
+        elif len(neighbors_1) > 0:
+            neighbors = neighbors_1
+        else:
+            neighbors = neighbors_2
+
+        # Calculate the average for non-empty neighbors
+        neighbors_average[i] = sd_predictions[neighbors].mean()
 
     return neighbors_average
 

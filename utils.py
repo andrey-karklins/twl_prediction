@@ -1,7 +1,9 @@
+import logging
 import os
 import pickle
 
 import numpy as np
+import pandas as pd
 from numba import float64
 
 M = 60  # 1 minute in seconds
@@ -55,6 +57,14 @@ def load_or_fetch_dataset(fetch_func, pickle_filename):
         with open(pickle_filename, 'wb') as file:
             pickle.dump(dataset, file)
     return dataset
+
+def load_completed_tasks(filename='results/results.csv'):
+    try:
+        results_df = pd.read_csv(filename)
+        return set(zip(results_df['Dataset name'], results_df['delta_t']))
+    except FileNotFoundError:
+        logging.info("No existing results file found, proceeding with all tasks.")
+        return set()
 
 
 def geo_mean(iterable):
