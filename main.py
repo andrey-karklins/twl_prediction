@@ -1,3 +1,4 @@
+import csv
 import logging
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from cross_fold_validation import model_no_fit
@@ -78,5 +79,30 @@ def main():
                 logging.error(f"An error occurred during grid search: {e}")
 
 
-if __name__ == "__main__":
-    main()
+def calculate_mean_neighbour_count():
+    datasets_physical = [
+        load_or_fetch_dataset(get_hypertext, 'pickles/hypertext.pkl'),
+        load_or_fetch_dataset(get_SFHH, 'pickles/SFHH.pkl')
+    ]
+    datasets_virtual = [
+        load_or_fetch_dataset(get_college_1, 'pickles/college_1.pkl'),
+        load_or_fetch_dataset(get_college_2, 'pickles/college_2.pkl'),
+        load_or_fetch_dataset(get_socio_calls, 'pickles/socio_calls.pkl'),
+        load_or_fetch_dataset(get_socio_sms, 'pickles/socio_sms.pkl')
+    ]
+    for G in datasets_physical + datasets_virtual:
+        sum_common_neighbours = 0
+        for e in G.common_neighbor_geometric_cache:
+            sum_common_neighbours += len(G.common_neighbor_geometric_cache[e])
+        mean_common_neighbours = sum_common_neighbours / len(G.common_neighbor_geometric_cache)
+        sum_distinct_neighbours = 0
+        for e in G.neighbor_edges_cache_1:
+            sum_distinct_neighbours += len(G.neighbor_edges_cache_1[e])
+            sum_distinct_neighbours += len(G.neighbor_edges_cache_2[e])
+        mean_distinct_neighbours = sum_distinct_neighbours / len(G.neighbor_edges_cache_1)
+        # write to csv
+        with open('results/mean_neighbour_count.csv', 'a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([G.name, mean_common_neighbours, mean_distinct_neighbours])
+
+calculate_mean_neighbour_count()

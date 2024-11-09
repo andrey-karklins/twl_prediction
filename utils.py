@@ -1,10 +1,13 @@
+import ast
 import logging
 import os
 import pickle
 
 import numpy as np
 import pandas as pd
-from numba import float64
+from matplotlib import pyplot as plt
+import seaborn as sns
+
 
 M = 60  # 1 minute in seconds
 H = M * 60  # 1 hour in seconds
@@ -117,9 +120,48 @@ def results_table(csv_name):
         for row in formatted_rows_final_with_backslashes:
             file.write(row + "\n")
 
+def params_table(csv_name):
+    # Update the formatted output directly in the code with "\\" at the end of each row
+    # Prepare formatted rows with the final formatting as specified
 
-import pandas as pd
+    # Load the data
+    data = pd.read_csv(csv_name)
 
+    formatted_rows_final_with_backslashes = []
+
+    values = np.zeros((data.shape[0], 12))
+    # Iterate over each row to apply formatting as specified
+    for i, row in data.iterrows():
+        # Copy the row's values
+        row_values = list(row)
+        # Apply multirow formatting every 3 rows for the first column
+        if i % 3 == 0:
+            row_values[0] = f"\\multirow{{3}}{{*}}{{{row_values[0]}}}"
+        else:
+            row_values[0] = ""  # Leave the first column empty for the other 2 rows in each group
+
+        row_values[1] = f"{seconds_to_human_readable(row_values[1])}"
+        # unwrap the values in the 5th and 8th columns which are tuples of 3
+        coef1, coef2, coef3 = ast.literal_eval(row_values[6])
+        row_values[6] = coef1
+        row_values.insert(7, coef2)
+        row_values.insert(8, coef3)
+        coef1, coef2, coef3 = ast.literal_eval(row_values[-1])
+        row_values[-1] = coef1
+        row_values.append(coef2)
+        row_values.append(coef3)
+        # Convert row to " & " separated format and add "\\" at the end
+        formatted_rows_final_with_backslashes.append(' & '.join(map(str, row_values)) + " \\\\")
+        values[i] = row_values[2:]
+
+    mean_values = np.mean(values, axis=0)
+    mean_values = np.round(mean_values, 2)
+    formatted_rows_final_with_backslashes.append(' & '.join(map(str, mean_values)) + " \\\\")
+    formatted_rows_final_with_backslashes[-1] = "\multicolumn{2}{c|}{Mean}" + formatted_rows_final_with_backslashes[-1]
+    # write to txt file
+    with open("tmp.txt", "w") as file:
+        for row in formatted_rows_final_with_backslashes:
+            file.write(row + "\n")
 
 def improvement_table(csv_name):
     # Load the CSV file
@@ -151,11 +193,76 @@ def improvement_table(csv_name):
     }
 
     # Write the LaTeX table to a text file
-    with open("improvement_table.txt", "w") as file:
+    with open("tmp.txt", "w") as file:
         for key, value in avg_improvements.items():
             file.write(f"{key} & {value} \\\\\n")
 
-improvement_table('results/results_sorted.csv')
+
+def autocorrelate_all_table(csv_name):
+    # Load the CSV file
+    df = pd.read_csv(csv_name)
+
+    # Safely evaluate each entry in 'SCDModel coefs' and 'SCDOModel coefs' columns as a tuple/list
+    df['SCDModel coefs'] = df['SCDModel coefs'].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
+    df['SCDOModel coefs'] = df['SCDOModel coefs'].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
+
+    # Breakdown coefficient columns into separate columns
+    df[['SCD_beta1', 'SCD_beta2', 'SCD_beta3']] = pd.DataFrame(df['SCDModel coefs'].tolist(), index=df.index)
+    df[['SCDO_beta1', 'SCDO_beta2', 'SCDO_beta3']] = pd.DataFrame(df['SCDOModel coefs'].tolist(), index=df.index)
+
+    # Drop the original coefficient columns
+    df = df.drop(columns=['SCDModel coefs', 'SCDOModel coefs'])
+
+    # plot heatmap
+    plt.figure(figsize=(10, 10))
+    sns.heatmap(df.corr(method='pearson'), annot=True, cmap="coolwarm", fmt=".2f", square=True)
+    plt.show()
+
+def autocorrelate_table(csv_name):
+    # Load the CSV file
+    df = pd.read_csv(csv_name)
+
+    # Safely evaluate each entry in 'SCDModel coefs' and 'SCDOModel coefs' columns as a tuple/list
+    df['SCDModel coefs'] = df['SCDModel coefs'].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
+    df['SCDOModel coefs'] = df['SCDOModel coefs'].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
+
+    # Breakdown coefficient columns into separate columns
+    df[['SCD_beta1', 'SCD_beta2', 'SCD_beta3']] = pd.DataFrame(df['SCDModel coefs'].tolist(), index=df.index)
+    df[['SCDO_beta1', 'SCDO_beta2', 'SCDO_beta3']] = pd.DataFrame(df['SCDOModel coefs'].tolist(), index=df.index)
+
+    # Drop the original coefficient columns
+    df = df.drop(columns=['SCDModel coefs', 'SCDOModel coefs'])
+
+    # Select only the columns of interest
+    properties = ['delta_t', 'transitivity', 'average_clustering', 'mean_common_neighbors', 'mean_distinct_neighbors']
+    scd_betas = ['SCD_beta1', 'SCD_beta2', 'SCD_beta3']
+    scdo_betas = ['SCDO_beta1', 'SCDO_beta2', 'SCDO_beta3']
+    df_subset = df[properties + scd_betas + scdo_betas]
+
+    # Calculate the correlation matrix for the selected columns
+    correlations = df_subset.corr(method='pearson')
+
+    # Filter the correlation matrix for SCD and SCDO separately
+    correlations_scd = correlations.loc[properties, scd_betas]
+    correlations_scdo = correlations.loc[properties, scdo_betas]
+
+    # Rename columns and rows for LaTeX-style formatting
+    correlations_scd.columns = [r'$\beta_1$', r'$\beta_2$', r'$\beta_3$']
+    correlations_scdo.columns = [r'$\beta_1$', r'$\beta_2$', r'$\beta_3$']
+    correlations_scd.index = [r'$\Delta t$', 'Transitivity', 'Average Clustering', r'$\mu_{common}$', r'$\mu_{distinct}$']
+    correlations_scdo.index = [r'$\Delta t$', 'Transitivity', 'Average Clustering', r'$\mu_{common}$', r'$\mu_{distinct}$']
+
+    # Plot correlation heatmap for SCD betas
+    plt.figure(figsize=(6, 6))
+    sns.heatmap(correlations_scd, annot=True, cmap="coolwarm", fmt=".2f", square=True)
+    plt.show()
+
+    # Plot correlation heatmap for SCDO betas
+    plt.figure(figsize=(6, 6))
+    sns.heatmap(correlations_scdo, annot=True, cmap="coolwarm", fmt=".2f", square=True)
+    plt.show()
+
+autocorrelate_table("results/corr_table.csv")
 
 def geo_mean(iterable):
     a = np.array(iterable, dtype=np.float64)
@@ -167,3 +274,4 @@ def geo_mean(iterable):
 
     # Use log transformation to avoid overflow, then take the mean
     return np.exp(np.mean(np.log(a)))
+

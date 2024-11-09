@@ -1,13 +1,16 @@
-from data_analysis import plot_lag_autocorrelation, plot_lag_weighted_jaccard_similarity, plot_autocorrelation_jaccard
 from get_data import *
 
 # Getting the datasets
-datasets_physical = [get_hypertext(), get_SFHH()]
+# Load datasets
+datasets_physical = [
+    load_or_fetch_dataset(get_hypertext, 'pickles/hypertext.pkl'),
+    load_or_fetch_dataset(get_SFHH, 'pickles/SFHH.pkl')
+]
 datasets_virtual = [
-    get_college_1(),
-    get_college_2(),
-    get_socio_calls(),
-    get_socio_sms()
+    load_or_fetch_dataset(get_college_1, 'pickles/college_1.pkl'),
+    load_or_fetch_dataset(get_college_2, 'pickles/college_2.pkl'),
+    load_or_fetch_dataset(get_socio_calls, 'pickles/socio_calls.pkl'),
+    load_or_fetch_dataset(get_socio_sms, 'pickles/socio_sms.pkl')
 ]
 # Time intervals (delta_t)
 delta_ts_physical = [10 * M, 30 * M, 1 * H]
@@ -29,6 +32,17 @@ def get_aggregated_properties(matrix, global_G, dataset_name, delta_t, output_fi
     avg_interactions_per_snapshot = np.mean(interactions_per_snapshot / interactions_per_snapshot.sum())
     std_interactions_per_snapshot = np.std(interactions_per_snapshot / interactions_per_snapshot.sum())
 
+    # Calculate mean common and distinct neighbours
+    sum_common_neighbours = 0
+    for e in global_G.common_neighbor_geometric_cache:
+        sum_common_neighbours += len(global_G.common_neighbor_geometric_cache[e])
+    mean_common_neighbours = sum_common_neighbours / len(global_G.common_neighbor_geometric_cache)
+    sum_distinct_neighbours = 0
+    for e in global_G.neighbor_edges_cache_1:
+        sum_distinct_neighbours += len(global_G.neighbor_edges_cache_1[e])
+        sum_distinct_neighbours += len(global_G.neighbor_edges_cache_2[e])
+    mean_distinct_neighbours = sum_distinct_neighbours / len(global_G.neighbor_edges_cache_1)
+
     # Create result dictionary (without total_number_interactions)
     results = {
         "Dataset name": dataset_name,
@@ -38,6 +52,10 @@ def get_aggregated_properties(matrix, global_G, dataset_name, delta_t, output_fi
         "std_percentage_of_links_per_snapshot": round(std_edges_per_snapshot * 100, 2),
         "average_percentage_of_interactions_per_snapshot": round(avg_interactions_per_snapshot * 100, 2),
         "std_percentage_of_interactions_per_snapshot": round(std_interactions_per_snapshot * 100, 2),
+        "average_clustering": nx.average_clustering(nx.Graph(global_G)),
+        "transitivity": nx.transitivity(nx.Graph(global_G)),
+        "mean_common_neighbors": mean_common_neighbours,
+        "mean_distinct_neighbors": mean_distinct_neighbours
     }
 
     # Write the data to a CSV file
@@ -57,7 +75,7 @@ def write_to_csv(output_file, results):
     with open(output_file, 'a', newline='') as csvfile:
         fieldnames = ["Dataset name", "delta_t", "total_number_snapshots",
                       "average_percentage_of_links_per_snapshot", "std_percentage_of_links_per_snapshot",
-                      "average_percentage_of_interactions_per_snapshot", "std_percentage_of_interactions_per_snapshot"]
+                      "average_percentage_of_interactions_per_snapshot", "std_percentage_of_interactions_per_snapshot", "transitivity", "average_clustering", "mean_common_neighbors", "mean_distinct_neighbors"]
 
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
@@ -80,5 +98,5 @@ def aggregate_data(datasets, delta_ts, output_file):
 
 # Example usage:
 # Aggregating data for physical datasets and virtual datasets
-aggregate_data(datasets_physical, delta_ts_physical, "physical_datasets_output.csv")
-aggregate_data(datasets_virtual, delta_ts_virtual, "virtual_datasets_output.csv")
+aggregate_data(datasets_physical, delta_ts_physical, "results/physical_datasets_output.csv")
+aggregate_data(datasets_virtual, delta_ts_virtual, "results/virtual_datasets_output.csv")
