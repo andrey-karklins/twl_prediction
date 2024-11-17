@@ -14,7 +14,7 @@ def grid_search_sd_model(data, taus, Ls, G_global):
     for tau in taus:
         for L in Ls:
             model.tau = tau
-            model.L = L
+            model.L = data.shape[1] * L
             score = model_no_fit(data, model)
             print(f"SDModel | {G_global.name} | tau={tau}, L={L}")
             results.append((tau, L, score))
@@ -22,38 +22,66 @@ def grid_search_sd_model(data, taus, Ls, G_global):
     return results
 
 
-def grid_search_scd_model(data, taus, Ls, coefs, G_global):
+def grid_search_scd_model(data, taus, Ls, G_global):
+    """
+    Perform grid search over tau, L, and alpha parameters for the SCDModel.
+
+    Parameters:
+    - data: Input data for training and evaluation.
+    - taus: List of tau values to consider.
+    - Ls: List of L values to consider.
+    - alpha_values: List of alpha values (for Lasso regularization) to consider.
+    - G_global: The global graph structure.
+
+    Returns:
+    - results: List of tuples containing (tau, L, alpha, score, best_betas).
+    """
     results = []
 
-    def search_task(tau, L, coef):
-        model = SCDModel(tau=tau, L=L, alpha=coef[0], beta=coef[1], gamma=coef[2], G_global=G_global)
+    def search_task(tau, L):
+        model = SCDModel(tau=tau, L=L, G_global=G_global)
         score = model_no_fit(data, model, threshold=300)
-        return tau, L, coef, score
+        best_betas = score['coefs']
+        return tau, L, score, best_betas
 
     with ThreadPoolExecutor(max_workers=20) as executor:
-        futures = [executor.submit(search_task, tau, L, coef) for tau in taus for L in Ls for coef in coefs]
+        futures = [executor.submit(search_task, tau, data.shape[1] * L) for tau in taus for L in Ls]
         for future in as_completed(futures):
-            tau, L, coef, score = future.result()
-            print(f"SCDModel | {G_global.name} | tau={tau}, L={L}, coef={coef}")
-            results.append((tau, L, coef, score))
+            tau, L, score, best_betas = future.result()
+            print(f"SCDModel | {G_global.name} | tau={tau}, L={L}, best_betas={best_betas}")
+            results.append((tau, L, score, best_betas))
 
     return results
 
 
-def grid_search_scdo_model(data, taus, Ls, coefs, G_global):
+def grid_search_scdo_model(data, taus, Ls, G_global):
+    """
+    Perform grid search over tau, L, and alpha parameters for the SCDOModel.
+
+    Parameters:
+    - data: Input data for training and evaluation.
+    - taus: List of tau values to consider.
+    - Ls: List of L values to consider.
+    - alpha_values: List of alpha values (for Lasso regularization) to consider.
+    - G_global: The global graph structure.
+
+    Returns:
+    - results: List of tuples containing (tau, L, alpha, score, best_betas).
+    """
     results = []
 
-    def search_task(tau, L, coef):
-        model = SCDOModel(tau=tau, L=L, alpha=coef[0], beta=coef[1], gamma=coef[2], G_global=G_global)
+    def search_task(tau, L):
+        model = SCDOModel(tau=tau, L=L, G_global=G_global)
         score = model_no_fit(data, model, threshold=300)
-        return tau, L, coef, score
+        best_betas = score['coefs']
+        return tau, L, score, best_betas
 
     with ThreadPoolExecutor(max_workers=20) as executor:
-        futures = [executor.submit(search_task, tau, L, coef) for tau in taus for L in Ls for coef in coefs]
+        futures = [executor.submit(search_task, tau, data.shape[1] * L) for tau in taus for L in Ls]
         for future in as_completed(futures):
-            tau, L, coef, score = future.result()
-            print(f"SCDOModel | {G_global.name} | tau={tau}, L={L}, coef={coef}")
-            results.append((tau, L, coef, score))
+            tau, L, score, best_betas = future.result()
+            print(f"SCDOModel | {G_global.name} | tau={tau}, L={L}, best_betas={best_betas}")
+            results.append((tau, L, score, best_betas))
 
     return results
 

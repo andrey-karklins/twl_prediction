@@ -96,7 +96,7 @@ def aggregate_data(datasets, delta_ts, output_file):
             # Get the aggregated properties and write them to the CSV file
             get_aggregated_properties(matrix, global_G, dataset.name, delta_t, output_file)
 
-# Example usage:
-# Aggregating data for physical datasets and virtual datasets
-aggregate_data(datasets_physical, delta_ts_physical, "results/physical_datasets_output.csv")
-aggregate_data(datasets_virtual, delta_ts_virtual, "results/virtual_datasets_output.csv")
+# # Example usage:
+# # Aggregating data for physical datasets and virtual datasets
+# aggregate_data(datasets_physical, delta_ts_physical, "results/physical_datasets_output.csv")
+# aggregate_data(datasets_virtual, delta_ts_virtual, "results/virtual_datasets_output.csv")

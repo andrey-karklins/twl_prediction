@@ -235,8 +235,8 @@ def autocorrelate_table(csv_name):
 
     # Select only the columns of interest
     properties = ['delta_t', 'transitivity', 'average_clustering', 'mean_common_neighbors', 'mean_distinct_neighbors']
-    scd_betas = ['SCD_beta1', 'SCD_beta2', 'SCD_beta3']
-    scdo_betas = ['SCDO_beta1', 'SCDO_beta2', 'SCDO_beta3']
+    scd_betas = ['SCD_beta1', 'SCD_beta2', 'SCD_beta3', "SCDModel MSE", "SCDModel AUPRC"]
+    scdo_betas = ['SCDO_beta1', 'SCDO_beta2', 'SCDO_beta3', "SCDOModel MSE", "SCDOModel AUPRC"]
     df_subset = df[properties + scd_betas + scdo_betas]
 
     # Calculate the correlation matrix for the selected columns
@@ -247,8 +247,8 @@ def autocorrelate_table(csv_name):
     correlations_scdo = correlations.loc[properties, scdo_betas]
 
     # Rename columns and rows for LaTeX-style formatting
-    correlations_scd.columns = [r'$\beta_1$', r'$\beta_2$', r'$\beta_3$']
-    correlations_scdo.columns = [r'$\beta_1$', r'$\beta_2$', r'$\beta_3$']
+    correlations_scd.columns = [r'$\beta_1$', r'$\beta_2$', r'$\beta_3$', 'MSE', 'AUPRC']
+    correlations_scdo.columns = [r'$\beta_1$', r'$\beta_2$', r'$\beta_3$', 'MSE', 'AUPRC']
     correlations_scd.index = [r'$\Delta t$', 'Transitivity', 'Average Clustering', r'$\mu_{common}$', r'$\mu_{distinct}$']
     correlations_scdo.index = [r'$\Delta t$', 'Transitivity', 'Average Clustering', r'$\mu_{common}$', r'$\mu_{distinct}$']
 
@@ -262,7 +262,7 @@ def autocorrelate_table(csv_name):
     sns.heatmap(correlations_scdo, annot=True, cmap="coolwarm", fmt=".2f", square=True)
     plt.show()
 
-autocorrelate_table("results/corr_table.csv")
+# autocorrelate_table("results/corr_table.csv")
 
 def geo_mean(iterable):
     a = np.array(iterable, dtype=np.float64)

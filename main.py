@@ -12,11 +12,7 @@ from utils import load_or_fetch_dataset, H, M, D, load_completed_tasks
 delta_ts_physical = [10 * M, 30 * M, 1 * H]
 delta_ts_virtual = [1 * H, 1 * D, 3 * D]
 taus = [0.1, 0.5, 1, 3]
-Ls = [1, 3, 5, 10]
-coefs = [(0.8, 0.2, 0), (0.8, 0.1, 0.1), (0.8, 0, 0.2),
-         (0.6, 0.4, 0), (0.6, 0.3, 0.1), (0.6, 0.2, 0.2), (0.6, 0.1, 0.3), (0.6, 0, 0.4),
-         (0.4, 0.5, 0.1), (0.4, 0.4, 0.2), (0.4, 0.3, 0.3), (0.4, 0.2, 0.4), (0.4, 0.1, 0.5),
-         (0.2, 0.6, 0.2), (0.2, 0.4, 0.4), (0.2, 0.2, 0.6)]
+Ls = [1/2, 1/4, 1/8]
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -26,8 +22,8 @@ def generate_results(dataset, delta_t):
     data, G = aggregate_to_matrix(dataset, delta_t)
 
     # Run grid searches concurrently
-    scdo_results = grid_search_scdo_model(data, taus, Ls, coefs, G)
-    scd_results = grid_search_scd_model(data, taus, Ls, coefs, G)
+    scdo_results = grid_search_scdo_model(data, taus, Ls, G)
+    scd_results = grid_search_scd_model(data, taus, Ls, G)
     sd_results = grid_search_sd_model(data, taus, Ls, G)
 
     top_scdo = sorted(scdo_results, key=lambda x: x[-1]['MSE'])[0]
@@ -78,31 +74,31 @@ def main():
             except Exception as e:
                 logging.error(f"An error occurred during grid search: {e}")
 
+if __name__ == '__main__':
+    main()
 
-def calculate_mean_neighbour_count():
-    datasets_physical = [
-        load_or_fetch_dataset(get_hypertext, 'pickles/hypertext.pkl'),
-        load_or_fetch_dataset(get_SFHH, 'pickles/SFHH.pkl')
-    ]
-    datasets_virtual = [
-        load_or_fetch_dataset(get_college_1, 'pickles/college_1.pkl'),
-        load_or_fetch_dataset(get_college_2, 'pickles/college_2.pkl'),
-        load_or_fetch_dataset(get_socio_calls, 'pickles/socio_calls.pkl'),
-        load_or_fetch_dataset(get_socio_sms, 'pickles/socio_sms.pkl')
-    ]
-    for G in datasets_physical + datasets_virtual:
-        sum_common_neighbours = 0
-        for e in G.common_neighbor_geometric_cache:
-            sum_common_neighbours += len(G.common_neighbor_geometric_cache[e])
-        mean_common_neighbours = sum_common_neighbours / len(G.common_neighbor_geometric_cache)
-        sum_distinct_neighbours = 0
-        for e in G.neighbor_edges_cache_1:
-            sum_distinct_neighbours += len(G.neighbor_edges_cache_1[e])
-            sum_distinct_neighbours += len(G.neighbor_edges_cache_2[e])
-        mean_distinct_neighbours = sum_distinct_neighbours / len(G.neighbor_edges_cache_1)
-        # write to csv
-        with open('results/mean_neighbour_count.csv', 'a', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow([G.name, mean_common_neighbours, mean_distinct_neighbours])
-
-calculate_mean_neighbour_count()
+# def calculate_mean_neighbour_count():
+#     datasets_physical = [
+#         load_or_fetch_dataset(get_hypertext, 'pickles/hypertext.pkl'),
+#         load_or_fetch_dataset(get_SFHH, 'pickles/SFHH.pkl')
+#     ]
+#     datasets_virtual = [
+#         load_or_fetch_dataset(get_college_1, 'pickles/college_1.pkl'),
+#         load_or_fetch_dataset(get_college_2, 'pickles/college_2.pkl'),
+#         load_or_fetch_dataset(get_socio_calls, 'pickles/socio_calls.pkl'),
+#         load_or_fetch_dataset(get_socio_sms, 'pickles/socio_sms.pkl')
+#     ]
+#     for G in datasets_physical + datasets_virtual:
+#         sum_common_neighbours = 0
+#         for e in G.common_neighbor_geometric_cache:
+#             sum_common_neighbours += len(G.common_neighbor_geometric_cache[e])
+#         mean_common_neighbours = sum_common_neighbours / len(G.common_neighbor_geometric_cache)
+#         sum_distinct_neighbours = 0
+#         for e in G.neighbor_edges_cache_1:
+#             sum_distinct_neighbours += len(G.neighbor_edges_cache_1[e])
+#             sum_distinct_neighbours += len(G.neighbor_edges_cache_2[e])
+#         mean_distinct_neighbours = sum_distinct_neighbours / len(G.neighbor_edges_cache_1)
+#         # write to csv
+#         with open('results/mean_neighbour_count.csv', 'a', newline='') as file:
+#             writer = csv.writer(file)
+#             writer.writerow([G.name, mean_common_neighbours, mean_distinct_neighbours])
