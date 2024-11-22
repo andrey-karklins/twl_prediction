@@ -57,7 +57,7 @@ def main():
     #     generate_results(dataset, delta_t)
 
     # Run tasks concurrently
-    with ProcessPoolExecutor(max_workers=12) as executor:  # Adjust max_workers as per CPU capacity
+    with ProcessPoolExecutor(max_workers=6) as executor:  # Adjust max_workers as per CPU capacity
         futures = [executor.submit(generate_results, dataset, delta_t) for dataset, delta_t in all_tasks]
 
         # Collect results as they complete

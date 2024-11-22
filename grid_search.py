@@ -20,7 +20,7 @@ def grid_search(data, taus, Ls, G_global, delta_t):
     #         write_results_to_csv(G_global.name, delta_t, tau, L, sd_score, scd_score, scdo_score, base_score)
 
     # Run tasks concurrently
-    with ThreadPoolExecutor(max_workers=12) as executor:
+    with ThreadPoolExecutor(max_workers=6) as executor:
         futures = [executor.submit(search_task, tau, L) for tau in taus for L in Ls]
         for future in as_completed(futures):
             tau, L, sd_score, scd_score, scdo_score, base_score = future.result()
