@@ -1,4 +1,7 @@
+import csv
+
 from get_data import *
+from utils import load_or_fetch_dataset, M, H, D
 
 # Getting the datasets
 # Load datasets
@@ -15,9 +18,6 @@ datasets_virtual = [
 # Time intervals (delta_t)
 delta_ts_physical = [10 * M, 30 * M, 1 * H]
 delta_ts_virtual = [1 * H, 1 * D, 3 * D]
-
-import csv
-import numpy as np
 
 # Function to calculate and write aggregated properties
 def get_aggregated_properties(matrix, global_G, dataset_name, delta_t, output_file):
@@ -61,6 +61,7 @@ def get_aggregated_properties(matrix, global_G, dataset_name, delta_t, output_fi
     # Write the data to a CSV file
     write_to_csv(output_file, results)
 
+
 # Function to write data to CSV
 def write_to_csv(output_file, results):
     # Check if the file exists
@@ -75,7 +76,8 @@ def write_to_csv(output_file, results):
     with open(output_file, 'a', newline='') as csvfile:
         fieldnames = ["Dataset name", "delta_t", "total_number_snapshots",
                       "average_percentage_of_links_per_snapshot", "std_percentage_of_links_per_snapshot",
-                      "average_percentage_of_interactions_per_snapshot", "std_percentage_of_interactions_per_snapshot", "transitivity", "average_clustering", "mean_common_neighbors", "mean_distinct_neighbors"]
+                      "average_percentage_of_interactions_per_snapshot", "std_percentage_of_interactions_per_snapshot",
+                      "transitivity", "average_clustering", "mean_common_neighbors", "mean_distinct_neighbors"]
 
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
@@ -85,6 +87,7 @@ def write_to_csv(output_file, results):
 
         # Write the actual data
         writer.writerow(results)
+
 
 # Function to aggregate data for datasets and delta_t
 def aggregate_data(datasets, delta_ts, output_file):

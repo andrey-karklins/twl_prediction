@@ -5,9 +5,8 @@ import pickle
 
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
 import seaborn as sns
-
+from matplotlib import pyplot as plt
 
 M = 60  # 1 minute in seconds
 H = M * 60  # 1 hour in seconds
@@ -50,6 +49,7 @@ def seconds_to_human_readable(seconds):
     human_readable = " ".join(human_readable)
     return human_readable
 
+
 def load_or_fetch_dataset(fetch_func, pickle_filename):
     """Loads dataset from a pickle file if it exists; otherwise, fetches, pickles, and returns it."""
     if os.path.exists(pickle_filename):
@@ -61,6 +61,7 @@ def load_or_fetch_dataset(fetch_func, pickle_filename):
             pickle.dump(dataset, file)
     return dataset
 
+
 def load_completed_tasks(filename='results/results.csv'):
     try:
         results_df = pd.read_csv(filename)
@@ -68,6 +69,7 @@ def load_completed_tasks(filename='results/results.csv'):
     except FileNotFoundError:
         logging.info("No existing results file found, proceeding with all tasks.")
         return set()
+
 
 def results_table(csv_name):
     # Update the formatted output directly in the code with "\\" at the end of each row
@@ -102,7 +104,7 @@ def results_table(csv_name):
         for col in max_columns:
             if round(row_values[col], 2) == max_value:
                 row_values[col] = f"\\textbf{{{round(row_values[col], 2)}}}"
-            else :
+            else:
                 row_values[col] = f"{round(row_values[col], 2)}"
 
         # Apply multirow formatting every 3 rows for the first column
@@ -119,6 +121,7 @@ def results_table(csv_name):
     with open("results_table.txt", "w") as file:
         for row in formatted_rows_final_with_backslashes:
             file.write(row + "\n")
+
 
 def params_table(csv_name):
     # Update the formatted output directly in the code with "\\" at the end of each row
@@ -163,11 +166,10 @@ def params_table(csv_name):
         for row in formatted_rows_final_with_backslashes:
             file.write(row + "\n")
 
+
 def improvement_table(csv_name):
     # Load the CSV file
     df = pd.read_csv(csv_name)  # Load without headers as we access by index
-    
-    
 
     # Calculate percentage improvements between models for each row using specified indices
     # Improvement of SD compared to Baseline
@@ -218,6 +220,7 @@ def autocorrelate_all_table(csv_name):
     sns.heatmap(df.corr(method='pearson'), annot=True, cmap="coolwarm", fmt=".2f", square=True)
     plt.show()
 
+
 def autocorrelate_table(csv_name):
     # Load the CSV file
     df = pd.read_csv(csv_name)
@@ -249,8 +252,10 @@ def autocorrelate_table(csv_name):
     # Rename columns and rows for LaTeX-style formatting
     correlations_scd.columns = [r'$\beta_1$', r'$\beta_2$', r'$\beta_3$', 'MSE', 'AUPRC']
     correlations_scdo.columns = [r'$\beta_1$', r'$\beta_2$', r'$\beta_3$', 'MSE', 'AUPRC']
-    correlations_scd.index = [r'$\Delta t$', 'Transitivity', 'Average Clustering', r'$\mu_{common}$', r'$\mu_{distinct}$']
-    correlations_scdo.index = [r'$\Delta t$', 'Transitivity', 'Average Clustering', r'$\mu_{common}$', r'$\mu_{distinct}$']
+    correlations_scd.index = [r'$\Delta t$', 'Transitivity', 'Average Clustering', r'$\mu_{common}$',
+                              r'$\mu_{distinct}$']
+    correlations_scdo.index = [r'$\Delta t$', 'Transitivity', 'Average Clustering', r'$\mu_{common}$',
+                               r'$\mu_{distinct}$']
 
     # Plot correlation heatmap for SCD betas
     plt.figure(figsize=(6, 6))
@@ -261,6 +266,7 @@ def autocorrelate_table(csv_name):
     plt.figure(figsize=(6, 6))
     sns.heatmap(correlations_scdo, annot=True, cmap="coolwarm", fmt=".2f", square=True)
     plt.show()
+
 
 # autocorrelate_table("results/corr_table.csv")
 
@@ -274,4 +280,3 @@ def geo_mean(iterable):
 
     # Use log transformation to avoid overflow, then take the mean
     return np.exp(np.mean(np.log(a)))
-

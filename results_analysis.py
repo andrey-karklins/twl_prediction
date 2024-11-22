@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from utils import seconds_to_human_readable
 
@@ -108,6 +108,7 @@ def plot_comparison_grid(results_csv):
         plt.tight_layout(rect=[0, 0, 1, 0.95])
         plt.suptitle(f'Comparison of {metric} Across Different Datasets and Delta_t Values', fontsize=16)
         plt.show()
+
 
 # Call the plotting function with the path to the results CSV
 plot_comparison_grid("results/results.csv")

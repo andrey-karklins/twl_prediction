@@ -1,11 +1,11 @@
 import csv
 
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import pearsonr
-import matplotlib.pyplot as plt
 
-from get_data import aggregate_to_matrix, get_socio_sms
-from utils import seconds_to_human_readable, D
+from get_data import aggregate_to_matrix
+from utils import seconds_to_human_readable
 
 
 def weighted_jaccard_similarity(array1, array2):
@@ -266,7 +266,8 @@ def apply_fourier_transform(matrices, delta_ts, dataset_name, filename="fourier_
 
         # Plot the averaged Magnitude Spectrum in the respective subplot
         axs[i].stem(frequencies, avg_magnitude, markerfmt='.', basefmt=" ")
-        axs[i].set_title(f'Averaged Magnitude Spectrum - Aggregation time: {seconds_to_human_readable(delta_t)}', fontsize=10)
+        axs[i].set_title(f'Averaged Magnitude Spectrum - Aggregation time: {seconds_to_human_readable(delta_t)}',
+                         fontsize=10)
         axs[i].set_xlabel('Frequency')
         axs[i].set_ylabel('Magnitude')
         axs[i].grid(True)

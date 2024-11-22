@@ -1,11 +1,7 @@
-import glob
-import os
 import datetime
 
 import networkx as nx
 import numpy as np
-
-from utils import *
 
 
 # Format: (100, 106, {'timestamp': 1246360360})
