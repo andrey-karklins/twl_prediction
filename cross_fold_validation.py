@@ -97,7 +97,7 @@ def base_model_no_fit(data, L, threshold=100):
 
 
 # Function to evaluate SDModel and SCDModel
-def model_fit(data, tau, L, G_global, threshold=100):
+def model_fit(data, tau, L, G_global, threshold=300):
     """
     Fit and evaluate the SDModel, SCDModel, and SCDOModel on the temporal weighted network.
 

@@ -109,6 +109,61 @@ def plot_comparison_grid(results_csv):
         plt.suptitle(f'Comparison of {metric} Across Different Datasets and Delta_t Values', fontsize=16)
         plt.show()
 
+def find_best_results():
+    # Load the CSV file
+    file_path = 'results/results.csv'  # Replace with your file path
+    data = pd.read_csv(file_path)
 
-# Call the plotting function with the path to the results CSV
-plot_comparison_grid("results/results.csv")
+    # Define the columns for the output
+    output_columns = [
+        "Dataset name", "delta_t",
+        "Baseline MSE", "Baseline AUPRC",
+        "SDModel MSE", "SDModel AUPRC", "SDModel tau", "SDModel L",
+        "SCDModel MSE", "SCDModel AUPRC", "SCDModel tau", "SCDModel L", "SCDModel coefs",
+        "SCDOModel MSE", "SCDOModel AUPRC", "SCDOModel tau", "SCDOModel L", "SCDOModel coefs"
+    ]
+
+    # Initialize an empty list for results
+    results = []
+
+    # Group by Dataset name and delta_t
+    grouped = data.groupby(["Dataset name", "delta_t"])
+
+    # Iterate through each group
+    for (dataset_name, delta_t), group in grouped:
+        # Find the row with the minimum MSE for each model type
+        baseline_row = group.loc[group["Baseline MSE"].idxmin()]
+        sdmodel_row = group.loc[group["SDModel MSE"].idxmin()]
+        scdmodel_row = group.loc[group["SCDModel MSE"].idxmin()]
+        scdomodel_row = group.loc[group["SCDOModel MSE"].idxmin()]
+
+        # Append the best values and corresponding parameters
+        results.append({
+            "Dataset name": dataset_name,
+            "delta_t": delta_t,
+            "Baseline MSE": baseline_row["Baseline MSE"],
+            "Baseline AUPRC": baseline_row["Baseline AUPRC"],
+            "SDModel MSE": sdmodel_row["SDModel MSE"],
+            "SDModel AUPRC": sdmodel_row["SDModel AUPRC"],
+            "SDModel tau": sdmodel_row["tau"],
+            "SDModel L": sdmodel_row["L"],
+            "SCDModel MSE": scdmodel_row["SCDModel MSE"],
+            "SCDModel AUPRC": scdmodel_row["SCDModel AUPRC"],
+            "SCDModel tau": scdmodel_row["tau"],
+            "SCDModel L": scdmodel_row["L"],
+            "SCDModel coefs": scdmodel_row["SCDModel coefs"],
+            "SCDOModel MSE": scdomodel_row["SCDOModel MSE"],
+            "SCDOModel AUPRC": scdomodel_row["SCDOModel AUPRC"],
+            "SCDOModel tau": scdomodel_row["tau"],
+            "SCDOModel L": scdomodel_row["L"],
+            "SCDOModel coefs": scdomodel_row["SCDOModel coefs"],
+        })
+
+    # Create a DataFrame from the results
+    results_df = pd.DataFrame(results, columns=output_columns)
+
+    # Save the results to a CSV file
+    output_file_path = 'results/best_mse_results.csv'  # Replace with your desired output path
+    results_df.to_csv(output_file_path, index=False)
+
+find_best_results()

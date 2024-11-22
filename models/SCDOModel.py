@@ -60,7 +60,7 @@ class SCDOModel:
         X = np.column_stack([intercept, self_driven, common_neighbor_driven, neighbor_driven])
         return X
 
-    def fit(self, sd_predictions, y, alpha=0.05, max_iter=2000, tol=1e-6):
+    def fit(self, sd_predictions, y, alpha=0.05, max_iter=3000, tol=1e-6):
         """
         Fits the model using Lasso regression to minimize Mean Squared Error (MSE).
 
