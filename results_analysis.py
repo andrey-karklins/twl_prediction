@@ -111,7 +111,7 @@ def plot_comparison_grid(results_csv):
 
 def find_best_results():
     # Load the CSV file
-    file_path = 'results/results.csv'  # Replace with your file path
+    file_path = 'results/results_sequential_training.csv'  # Replace with your file path
     data = pd.read_csv(file_path)
 
     # Define the columns for the output
@@ -163,7 +163,7 @@ def find_best_results():
     results_df = pd.DataFrame(results, columns=output_columns)
 
     # Save the results to a CSV file
-    output_file_path = 'results/best_mse_results.csv'  # Replace with your desired output path
+    output_file_path = 'results/best_mse_results_sequential_training.csv'  # Replace with your desired output path
     results_df.to_csv(output_file_path, index=False)
 
 find_best_results()

@@ -97,11 +97,12 @@ def base_model_no_fit(data, L, threshold=100):
 
 
 # Function to evaluate SDModel and SCDModel
-def model_fit(data, tau, L, G_global, threshold=300):
+def model_fit(data, tau, L, G_global, train_window_rate=0.1, threshold=300):
     """
     Fit and evaluate the SDModel, SCDModel, and SCDOModel on the temporal weighted network.
 
     Args:
+        train_window_rate: Percentage of the data to use as the training window within L.
         data: Input data matrix (MxT), representing temporal weighted network.
         tau: Decay factor for SDModel.
         L: Observation window (number of previous timestamps used for prediction).
@@ -135,23 +136,31 @@ def model_fit(data, tau, L, G_global, threshold=300):
     scd_beta_sum = np.zeros(4)  # Sum of coefficients (betas) from SCDModel
     scdo_beta_sum = np.zeros(4)  # Sum of coefficients (betas) from SCDOModel
 
+    train_window = max(1, int(L * train_window_rate))
+    sd_predictions_cache = {}
     # Loop through prediction indices
     for j, i in enumerate(indices):
         # Predict current state using SDModel
         sd_predictions[j] = sd_model.predict(data[i - L:i])
-
-        # Predict historical state with SDModel for SCDModel and SCDOModel fitting
-        sd_fit_predict = sd_model.predict(data[i - L - 1:i - 1])
+        sd_fit_predictions = np.zeros((train_window, M))
+        sd_fit_y = np.zeros((train_window, M))
+        for k in range(train_window):
+            if (i - k - 1 in sd_predictions_cache):
+                sd_fit_predictions[k] = sd_predictions_cache[i - k - 1]
+            else:
+                sd_fit_predictions[k] = sd_model.predict(data[i - L - 1:i - k - 1])
+                sd_predictions_cache[i - k - 1] = sd_fit_predictions[k]
+            sd_fit_y[k] = data[i - k - 1]
 
         # Fit and predict using SCDModel
-        scd_model.fit(sd_fit_predict, data[i - 1])
+        scd_model.fit(sd_fit_predictions, sd_fit_y)
         scd_predictions[j] = scd_model.predict(sd_predictions[j])
         scd_beta_sum += scd_model.betas
         if not scd_model.has_converged:
             print(f"SCDModel did not converge")
 
         # Fit and predict using SCDOModel
-        scdo_model.fit(sd_fit_predict, data[i - 1])
+        scdo_model.fit(sd_fit_predictions, sd_fit_y)
         scdo_predictions[j] = scdo_model.predict(sd_predictions[j])
         scdo_beta_sum += scdo_model.betas
         if not scdo_model.has_converged:

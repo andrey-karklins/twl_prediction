@@ -81,21 +81,30 @@ class SCDModel:
         Fits the model using Lasso regression to minimize Mean Squared Error (MSE).
 
         Parameters:
-        sd_predictions: numpy array, shape (n_samples,)
+        sd_predictions: numpy array, shape (n_samples,n_targets)
             The base predictions (self-driven component).
-        y: numpy array, shape (n_samples,)
+        y: numpy array, shape (n_samples,n_targets)
             The target variable (continuous positive values).
         alpha: float, optional (default=0.1)
             The regularization strength for Lasso.
         max_iter: int, optional (default=1000)
             The maximum number of iterations for Lasso optimization.
         """
-        # Compute the feature matrix
-        X = self._compute_features(sd_predictions)
+        # Preallocate the feature matrix and target array
+        num_samples, num_predictions = sd_predictions.shape
+        X = np.zeros((num_samples * num_predictions, 4))  # Assuming 4 features
+        Y = y.flatten()  # Flatten if `y` is a 2D array matching `sd_predictions`
+
+        # Compute the feature matrix in a vectorized manner
+        features = np.vstack([self._compute_features(sd_pred) for sd_pred in sd_predictions])
+
+        # Assign features and targets directly
+        X[:features.shape[0], :] = features
+        Y[:features.shape[0]] = y.ravel()  # Ensure y is flattened if it's a 2D array
 
         # Fit Lasso regression to minimize MSE
         lasso = Lasso(alpha=alpha, max_iter=max_iter, positive=True, tol=tol, fit_intercept=False)
-        lasso.fit(X, y)
+        lasso.fit(X, Y)
         self.has_converged = lasso.n_iter_ < max_iter
 
         # Store the learned coefficients (including intercept)

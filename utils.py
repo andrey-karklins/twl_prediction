@@ -62,7 +62,7 @@ def load_or_fetch_dataset(fetch_func, pickle_filename):
     return dataset
 
 
-def load_completed_tasks(filename='results/results.csv'):
+def load_completed_tasks(filename='results/results_sequential_training.csv'):
     try:
         results_df = pd.read_csv(filename)
         return set(zip(results_df['Dataset name'], results_df['delta_t']))
