@@ -53,19 +53,19 @@ def main():
     #     return
 
     # Run tasks sequentially
-    for dataset, delta_t in all_tasks:
-        generate_results(dataset, delta_t)
+    # for dataset, delta_t in all_tasks:
+    #     generate_results(dataset, delta_t)
 
     # Run tasks concurrently
-    # with ProcessPoolExecutor(max_workers=6) as executor:  # Adjust max_workers as per CPU capacity
-    #     futures = [executor.submit(generate_results, dataset, delta_t) for dataset, delta_t in all_tasks]
-    #
-    #     # Collect results as they complete
-    #     for future in as_completed(futures):
-    #         try:
-    #             future.result()  # Will raise an exception if the task failed
-    #         except Exception as e:
-    #             logging.error(f"An error occurred during grid search: {e}")
+    with ProcessPoolExecutor(max_workers=8) as executor:  # Adjust max_workers as per CPU capacity
+        futures = [executor.submit(generate_results, dataset, delta_t) for dataset, delta_t in all_tasks]
+
+        # Collect results as they complete
+        for future in as_completed(futures):
+            try:
+                future.result()  # Will raise an exception if the task failed
+            except Exception as e:
+                logging.error(f"An error occurred during grid search: {e}")
 
 
 if __name__ == '__main__':
