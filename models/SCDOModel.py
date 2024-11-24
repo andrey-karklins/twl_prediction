@@ -29,7 +29,7 @@ def _get_neighbors_sum(sd_predictions, neighbor_edges_cache_1, neighbor_edges_ca
 class SCDOModel:
     def __init__(self, G_global):
         self.G_global = G_global
-        self.betas = None
+        self.betas = np.zeros(4)
         self.has_converged = False
 
     def _compute_features(self, sd_predictions):
@@ -44,8 +44,6 @@ class SCDOModel:
         X: numpy array, shape (n_samples, 4)
             Feature matrix including intercept, self-driven, common neighbors, and distinct neighbors.
         """
-        intercept = np.ones(sd_predictions.shape[0])  # Intercept term
-
         self_driven = sd_predictions  # Self-driven component
 
         common_neighbor_driven = _get_common_neighbors_sum(
@@ -57,26 +55,26 @@ class SCDOModel:
         )
 
         # Combine features into a matrix
-        X = np.column_stack([intercept, self_driven, common_neighbor_driven, neighbor_driven])
+        X = np.column_stack([self_driven, common_neighbor_driven, neighbor_driven])
         return X
 
-    def fit(self, sd_predictions, y, alpha=0.05, max_iter=2000, tol=1e-6):
+    def fit(self, sd_predictions, y, alpha=1, max_iter=500, tol=1e-4):
         """
         Fits the model using Lasso regression to minimize Mean Squared Error (MSE).
 
         Parameters:
-        sd_predictions: numpy array, shape (n_samples,)
+        sd_predictions: numpy array, shape (n_samples,n_targets)
             The base predictions (self-driven component).
-        y: numpy array, shape (n_samples,)
+        y: numpy array, shape (n_samples,n_targets)
             The target variable (continuous positive values).
-        alpha: float, optional (default=0.1)
+        alpha: float, optional (default=1)
             The regularization strength for Lasso.
         max_iter: int, optional (default=1000)
             The maximum number of iterations for Lasso optimization.
         """
         # Preallocate the feature matrix and target array
         num_samples, num_predictions = sd_predictions.shape
-        X = np.zeros((num_samples * num_predictions, 4))  # Assuming 4 features
+        X = np.zeros((num_samples * num_predictions, 3))  # Assuming 4 features
         Y = y.flatten()  # Flatten if `y` is a 2D array matching `sd_predictions`
 
         # Compute the feature matrix in a vectorized manner
@@ -87,19 +85,20 @@ class SCDOModel:
         Y[:features.shape[0]] = y.ravel()  # Ensure y is flattened if it's a 2D array
 
         # Fit Lasso regression to minimize MSE
-        lasso = Lasso(alpha=alpha, max_iter=max_iter, positive=True, tol=tol, fit_intercept=False)
+        lasso = Lasso(alpha=alpha, max_iter=max_iter, positive=True, tol=tol, selection='random')
         lasso.fit(X, Y)
         self.has_converged = lasso.n_iter_ < max_iter
 
         # Store the learned coefficients (including intercept)
-        self.betas = lasso.coef_
+        self.betas[0] = lasso.intercept_
+        self.betas[1:] = lasso.coef_
 
     def predict(self, sd_predictions):
         """
         Predicts the target variable using the learned coefficients.
         """
         # Compute feature matrix
-        X = self._compute_features(sd_predictions)
+        X = np.column_stack([np.ones(sd_predictions.shape[0]), self._compute_features(sd_predictions)])
 
         # Prediction: dot product of X and betas
         return X @ self.betas

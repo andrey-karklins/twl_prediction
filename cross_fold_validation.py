@@ -120,6 +120,7 @@ def model_fit(data, tau, L, G_global, train_window_rate=0.1, threshold=300):
     T = data.shape[0]
     L = int(T * L)
     M = data.shape[1]
+    train_window = min(10, max(1, int(L * train_window_rate)))
 
     # Determine prediction indices
     indices = find_indices(T, L, threshold)
@@ -136,7 +137,6 @@ def model_fit(data, tau, L, G_global, train_window_rate=0.1, threshold=300):
     scd_beta_sum = np.zeros(4)  # Sum of coefficients (betas) from SCDModel
     scdo_beta_sum = np.zeros(4)  # Sum of coefficients (betas) from SCDOModel
 
-    train_window = max(1, int(L * train_window_rate))
     sd_predictions_cache = {}
     # Loop through prediction indices
     for j, i in enumerate(indices):
