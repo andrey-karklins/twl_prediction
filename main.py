@@ -12,8 +12,8 @@ warnings.filterwarnings("ignore", category=UserWarning, module="sklearn.linear_m
 # Parameter definitions
 delta_ts_physical = [10 * M, 30 * M, 1 * H]
 delta_ts_virtual = [1 * H, 1 * D, 3 * D]
-taus = [0.5, 1, 2]
-Ls = [1 / 2, 1 / 4]
+taus = [0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3]
+Ls = [1/2]
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -53,19 +53,19 @@ def main():
     #     return
 
     # Run tasks sequentially
-    # for dataset, delta_t in all_tasks:
-    #     generate_results(dataset, delta_t)
+    for dataset, delta_t in all_tasks:
+        generate_results(dataset, delta_t)
 
     # Run tasks concurrently
-    with ProcessPoolExecutor(max_workers=8) as executor:  # Adjust max_workers as per CPU capacity
-        futures = [executor.submit(generate_results, dataset, delta_t) for dataset, delta_t in all_tasks]
-
-        # Collect results as they complete
-        for future in as_completed(futures):
-            try:
-                future.result()  # Will raise an exception if the task failed
-            except Exception as e:
-                logging.error(f"An error occurred during grid search: {e}")
+    # with ProcessPoolExecutor(max_workers=8) as executor:  # Adjust max_workers as per CPU capacity
+    #     futures = [executor.submit(generate_results, dataset, delta_t) for dataset, delta_t in all_tasks]
+    #
+    #     # Collect results as they complete
+    #     for future in as_completed(futures):
+    #         try:
+    #             future.result()  # Will raise an exception if the task failed
+    #         except Exception as e:
+    #             logging.error(f"An error occurred during grid search: {e}")
 
 
 if __name__ == '__main__':

@@ -74,7 +74,7 @@ class SCDModel:
         X = np.column_stack([self_driven, common_neighbor_driven, neighbor_driven])
         return X
 
-    def fit(self, sd_predictions, y, alpha=1, max_iter=500, tol=1e-4):
+    def fit(self, sd_predictions, y, alpha=1, max_iter=1000, tol=1e-6):
         """
         Fits the model using Lasso regression to minimize Mean Squared Error (MSE).
 
@@ -114,7 +114,9 @@ class SCDModel:
         Predicts the target variable using the learned coefficients.
         """
         # Compute feature matrix
-        X = np.column_stack([np.ones(sd_predictions.shape[0]), self._compute_features(sd_predictions)])
+        predictions = np.zeros(sd_predictions.shape)
+        for i in range(sd_predictions.shape[0]):
+            X = np.column_stack([np.ones(sd_predictions.shape[1]), self._compute_features(sd_predictions)])
+            predictions[i] = X @ self.betas
 
-        # Prediction: dot product of X and betas
-        return X @ self.betas
+        return predictions

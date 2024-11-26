@@ -9,20 +9,18 @@ def _get_neighbors_sum(sd_predictions, neighbor_edges_cache_1, neighbor_edges_ca
 
     # Compute the average for each neighbor index sequentially
     for i in range(len(neighbors_average)):
-        match (len(neighbor_edges_cache_1[i]) == 0, len(neighbor_edges_cache_2[i]) == 0):
-            case (False, False):
-                neighbors_average[i] = np.sqrt(
-                    np.mean(sd_predictions[neighbor_edges_cache_1[i]]) * np.mean(
-                        sd_predictions[neighbor_edges_cache_2[i]]))
-                continue
-            case (True, False):
-                neighbors_average[i] = np.mean(sd_predictions[neighbor_edges_cache_2[i]])
-                continue
-            case (False, True):
-                neighbors_average[i] = np.mean(sd_predictions[neighbor_edges_cache_1[i]])
-                continue
-            case (True, True):
-                continue
+        len_cache_1 = len(neighbor_edges_cache_1[i]) == 0
+        len_cache_2 = len(neighbor_edges_cache_2[i]) == 0
+
+        if not len_cache_1 and not len_cache_2:
+            neighbors_average[i] = np.sqrt(
+                np.mean(sd_predictions[neighbor_edges_cache_1[i]]) * np.mean(
+                    sd_predictions[neighbor_edges_cache_2[i]]))
+        elif len_cache_1 and not len_cache_2:
+            neighbors_average[i] = np.mean(sd_predictions[neighbor_edges_cache_2[i]])
+        elif not len_cache_1 and len_cache_2:
+            neighbors_average[i] = np.mean(sd_predictions[neighbor_edges_cache_1[i]])
+
     return neighbors_average
 
 
@@ -58,7 +56,7 @@ class SCDOModel:
         X = np.column_stack([self_driven, common_neighbor_driven, neighbor_driven])
         return X
 
-    def fit(self, sd_predictions, y, alpha=1, max_iter=500, tol=1e-4):
+    def fit(self, sd_predictions, y, alpha=1, max_iter=1000, tol=1e-6):
         """
         Fits the model using Lasso regression to minimize Mean Squared Error (MSE).
 
@@ -98,7 +96,10 @@ class SCDOModel:
         Predicts the target variable using the learned coefficients.
         """
         # Compute feature matrix
-        X = np.column_stack([np.ones(sd_predictions.shape[0]), self._compute_features(sd_predictions)])
+        predictions = np.zeros(sd_predictions.shape)
+        for i in range(sd_predictions.shape[0]):
+            X = np.column_stack([np.ones(sd_predictions.shape[1]), self._compute_features(sd_predictions)])
+            predictions[i] = X @ self.betas
 
-        # Prediction: dot product of X and betas
-        return X @ self.betas
+        return predictions
+
