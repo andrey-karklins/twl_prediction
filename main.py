@@ -13,9 +13,9 @@ from utils import load_or_fetch_dataset, H, M, D
 warnings.filterwarnings("ignore", category=UserWarning, module="sklearn.linear_model._coordinate_descent")
 
 # Parameter definitions
-delta_ts_physical = [10 * M]
+delta_ts_physical = [10 * M, 30 * M, 1 * H]
 delta_ts_virtual = [1 * H, 1 * D, 3 * D]
-taus = [0.25]
+taus = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 3, 3.5, 4, 4.5, 5]
 Ls = [1 / 2]
 
 # Set up logging
@@ -67,30 +67,33 @@ def search_task(dataset_name, data, delta_t, tau, L, G):
     """
     Perform a single search task and save the results.
     """
-    print(f"Processing {dataset_name} with delta_t: {delta_t}, tau: {tau}, L: {L}")
-    base_score = base_model_no_fit(data, L)
-    sd_score, scd_score, scdo_score = model_fit(data, tau, L, G)
-    logging.info(
-        f"{dataset_name} | delta_t: {delta_t} | tau: {tau}, L: {L} | "
-        f"sd: {sd_score['MSE']}, scd: {scd_score['MSE']}, scdo: {scdo_score['MSE']}"
-    )
-    write_results_to_csv(
-        dataset_name, delta_t, tau, L,
-        sd_score, scd_score, scdo_score, base_score
-    )
+    try:
+        print(f"Processing {dataset_name} with delta_t: {delta_t}, tau: {tau}, L: {L}")
+        base_score = base_model_no_fit(data, L)
+        sd_score, scd_score, scdo_score = model_fit(data, tau, L, G)
+        logging.info(
+            f"{dataset_name} | delta_t: {delta_t} | tau: {tau}, L: {L} | "
+            f"sd: {sd_score['MSE']}, scd: {scd_score['MSE']}, scdo: {scdo_score['MSE']}"
+        )
+        write_results_to_csv(
+            dataset_name, delta_t, tau, L,
+            sd_score, scd_score, scdo_score, base_score
+        )
+    except Exception as e:
+        logging.error(f"Error processing {dataset_name} with delta_t: {delta_t}, tau: {tau}, L: {L} - {e}")
 
 
 def main():
     # Load datasets
     datasets_physical = [
         load_or_fetch_dataset(get_hypertext, 'pickles/hypertext.pkl'),
-        # load_or_fetch_dataset(get_SFHH, 'pickles/SFHH.pkl')
+        load_or_fetch_dataset(get_SFHH, 'pickles/SFHH.pkl')
     ]
     datasets_virtual = [
-        # load_or_fetch_dataset(get_college_1, 'pickles/college_1.pkl'),
-        # load_or_fetch_dataset(get_college_2, 'pickles/college_2.pkl'),
-        # load_or_fetch_dataset(get_socio_calls, 'pickles/socio_calls.pkl'),
-        # load_or_fetch_dataset(get_socio_sms, 'pickles/socio_sms.pkl')
+        load_or_fetch_dataset(get_college_1, 'pickles/college_1.pkl'),
+        load_or_fetch_dataset(get_college_2, 'pickles/college_2.pkl'),
+        load_or_fetch_dataset(get_socio_calls, 'pickles/socio_calls.pkl'),
+        load_or_fetch_dataset(get_socio_sms, 'pickles/socio_sms.pkl')
     ]
 
     # Combine all datasets and delta_t values
@@ -106,23 +109,20 @@ def main():
 
         for tau in taus:
             for L in Ls:
-                # if (dataset_name, delta_t, tau, L) not in completed_tasks:
-                tasks.append((dataset_name, data, delta_t, tau, L, G))
+                if (dataset_name, delta_t, tau, L) not in completed_tasks:
+                    tasks.append((dataset_name, data, delta_t, tau, L, G))
 
-    # Perform the search tasks
-    for task in tasks:
-        search_task(*task)
     # Use ProcessPoolExecutor to parallelize the tasks
-    # with ProcessPoolExecutor(max_workers=1) as executor:
-    #     futures = {executor.submit(search_task, *task): task for task in tasks}
-    #
-    #     for future in as_completed(futures):
-    #         task = futures[future]
-    #         try:
-    #             future.result()  # Block until the future is completed
-    #             logging.info(f"Task completed: {task}")
-    #         except Exception as e:
-    #             logging.error(f"Error occurred during task {task}: {e}")
+    with ProcessPoolExecutor(max_workers=32) as executor:
+        futures = {executor.submit(search_task, *task): task for task in tasks}
+
+        for future in as_completed(futures):
+            task = futures[future]
+            try:
+                future.result()  # Block until the future is completed
+                logging.info(f"Task completed: {task}")
+            except Exception as e:
+                logging.error(f"Error occurred during task {task}: {e}")
 
 
 if __name__ == '__main__':
