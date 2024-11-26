@@ -3,10 +3,10 @@ import logging
 import os
 import pickle
 
-import numpy as np
+# import numpy as np
 import pandas as pd
-import seaborn as sns
-from matplotlib import pyplot as plt
+# import seaborn as sns
+# from matplotlib import pyplot as plt
 
 M = 60  # 1 minute in seconds
 H = M * 60  # 1 hour in seconds
@@ -60,16 +60,6 @@ def load_or_fetch_dataset(fetch_func, pickle_filename):
         with open(pickle_filename, 'wb') as file:
             pickle.dump(dataset, file)
     return dataset
-
-
-def load_completed_tasks(filename='results/results_sequential_training.csv'):
-    try:
-        results_df = pd.read_csv(filename)
-        return set(zip(results_df['Dataset name'], results_df['delta_t']))
-    except FileNotFoundError:
-        logging.info("No existing results file found, proceeding with all tasks.")
-        return set()
-
 
 def results_table(csv_name):
     # Update the formatted output directly in the code with "\\" at the end of each row

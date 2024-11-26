@@ -68,7 +68,7 @@ def find_indices(T, L, threshold):
 
 
 # Function to evaluate the base model (reference solution)
-def base_model_no_fit(data, L, threshold=100):
+def base_model_no_fit(data, L, threshold=300):
     """
     Evaluate the BaseModel without fitting as a reference solution.
 
