@@ -116,7 +116,7 @@ class SCDModel:
         # Compute feature matrix
         predictions = np.zeros(sd_predictions.shape)
         for i in range(sd_predictions.shape[0]):
-            X = np.column_stack([np.ones(sd_predictions.shape[1]), self._compute_features(sd_predictions)])
+            X = np.column_stack([np.ones(sd_predictions.shape[1]), self._compute_features(sd_predictions[i])])
             predictions[i] = X @ self.betas
 
         return predictions

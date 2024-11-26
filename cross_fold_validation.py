@@ -118,7 +118,6 @@ def model_fit(data, tau, L, G_global, threshold=300):
     data = data.T
     T = data.shape[0]
     L = int(T * L)
-    M = data.shape[1]
     # Determine prediction indices
     indices = find_indices(T, L, threshold)
 
