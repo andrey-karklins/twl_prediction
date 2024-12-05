@@ -3,10 +3,10 @@ import logging
 import os
 import pickle
 
-# import numpy as np
+import numpy as np
 import pandas as pd
-# import seaborn as sns
-# from matplotlib import pyplot as plt
+import seaborn as sns
+from matplotlib import pyplot as plt
 
 M = 60  # 1 minute in seconds
 H = M * 60  # 1 hour in seconds
@@ -65,13 +65,20 @@ def results_table(csv_name):
     # Update the formatted output directly in the code with "\\" at the end of each row
     # Prepare formatted rows with the final formatting as specified
 
+    # Sort by dataset name in specific order:
+    dataset_order = ['Hypertext graph', 'SFHH graph', 'College graph 1', 'College graph 2', 'Socio-calls graph', 'Socio-sms graph']
+    remove_columns = ['SDModel tau', 'SDModel L', 'SCDModel tau', 'SCDModel L', 'SCDModel coefs', 'SCDOModel tau', 'SCDOModel L', 'SCDOModel coefs']
+
     # Load the data
     data = pd.read_csv(csv_name)
+    data = data.drop(columns=remove_columns)
+    data['Dataset name'] = pd.Categorical(data['Dataset name'], categories=dataset_order, ordered=True)
+    data = data.sort_values('Dataset name')
 
     formatted_rows_final_with_backslashes = []
 
     # Iterate over each row to apply formatting as specified
-    for i, row in data.iterrows():
+    for i, (_, row) in enumerate(data.iterrows()):
         # Copy the row's values
         row_values = list(row)
 
@@ -107,24 +114,31 @@ def results_table(csv_name):
         # Convert row to " & " separated format and add "\\" at the end
         formatted_rows_final_with_backslashes.append(' & '.join(map(str, row_values)) + " \\\\")
 
+
     # write to txt file
     with open("results_table.txt", "w") as file:
         for row in formatted_rows_final_with_backslashes:
             file.write(row + "\n")
 
-
 def params_table(csv_name):
     # Update the formatted output directly in the code with "\\" at the end of each row
     # Prepare formatted rows with the final formatting as specified
 
+    ## Sort by dataset name in specific order:
+    dataset_order = ['Hypertext graph', 'SFHH graph', 'College graph 1', 'College graph 2', 'Socio-calls graph', 'Socio-sms graph']
+    remove_columns = ['SDModel MSE', 'SDModel AUPRC', 'SCDModel MSE', 'SCDModel AUPRC', 'SCDOModel MSE', 'SCDOModel AUPRC']
+
     # Load the data
     data = pd.read_csv(csv_name)
+    data = data.drop(columns=remove_columns)
+    data['Dataset name'] = pd.Categorical(data['Dataset name'], categories=dataset_order, ordered=True)
+    data = data.sort_values('Dataset name')
 
     formatted_rows_final_with_backslashes = []
 
     values = np.zeros((data.shape[0], 12))
     # Iterate over each row to apply formatting as specified
-    for i, row in data.iterrows():
+    for i, (_, row) in enumerate(data.iterrows()):
         # Copy the row's values
         row_values = list(row)
         # Apply multirow formatting every 3 rows for the first column
@@ -156,6 +170,7 @@ def params_table(csv_name):
         for row in formatted_rows_final_with_backslashes:
             file.write(row + "\n")
 
+params_table("results/best_results.csv")
 
 def improvement_table(csv_name):
     # Load the CSV file
@@ -258,7 +273,80 @@ def autocorrelate_table(csv_name):
     plt.show()
 
 
-# autocorrelate_table("results/corr_table.csv")
+def plot_normalized_mse(file_path='results/results_L2.csv'):
+    # Load the dataset
+    data = pd.read_csv(file_path)
+
+    # Group data by 'Dataset name' and 'delta_t'
+    grouped = data.groupby(['Dataset name', 'delta_t'])
+
+    # Calculate normalized MSE for SDModel MSE
+    data['Worst MSE SD'] = grouped['SDModel MSE'].transform('max')
+    data['Best MSE SD'] = grouped['SDModel MSE'].transform('min')
+    data['Normalized MSE SD'] = (data['Worst MSE SD'] - data['SDModel MSE']) / (data['Worst MSE SD'] - data['Best MSE SD'])
+
+    # Calculate normalized MSE for SCDModel MSE
+    data['Worst MSE SCD'] = grouped['SCDModel MSE'].transform('max')
+    data['Best MSE SCD'] = grouped['SCDModel MSE'].transform('min')
+    data['Normalized MSE SCD'] = (data['Worst MSE SCD'] - data['SCDModel MSE']) / (data['Worst MSE SCD'] - data['Best MSE SCD'])
+
+    datasets = data['Dataset name'].unique()
+    delta_ts = data['delta_t'].unique()
+    physical_datasets = ['tatsets', 'hypertext', 'sfhh']
+
+    # Plot for SDModel MSE
+    plt.figure(figsize=(10, 6))
+    for dataset in datasets:
+        for delta_t in delta_ts:
+            subset = data[(data['Dataset name'] == dataset) & (data['delta_t'] == delta_t)].sort_values(by='tau')
+            if not subset.empty:
+                plt.plot(subset['tau'], subset['Normalized MSE SD'], label=f"{dataset}, delta_t={delta_t}")
+
+    plt.title("Normalized MSE vs Tau (SDModel MSE)")
+    plt.xlabel("Tau")
+    plt.ylabel("Normalized MSE")
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.grid(axis='x', linestyle='--', color='gray', linewidth=0.7, alpha=0.7)
+    plt.tight_layout()
+    plt.show()
+
+    # Plot for SCDModel MSE (Physical Datasets)
+    plt.figure(figsize=(10, 6))
+    for dataset in datasets:
+        for delta_t in delta_ts:
+            subset = data[(data['Dataset name'] == dataset) & (data['delta_t'] == delta_t)].sort_values(by='tau')
+            if not subset.empty and any(phys in dataset.lower() for phys in physical_datasets):
+                plt.plot(subset['tau'], subset['Normalized MSE SCD'], label=f"{dataset}, delta_t={delta_t}")
+
+    plt.title("Normalized MSE vs Tau (Physical Datasets - SCDModel MSE)")
+    plt.xlabel("Tau")
+    plt.ylabel("Normalized MSE")
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.grid(axis='x', linestyle='--', color='gray', linewidth=0.7, alpha=0.7)
+    plt.tight_layout()
+    plt.show()
+
+    # Plot for SCDModel MSE (Virtual Datasets)
+    plt.figure(figsize=(10, 6))
+    for dataset in datasets:
+        for delta_t in delta_ts:
+            subset = data[(data['Dataset name'] == dataset) & (data['delta_t'] == delta_t)].sort_values(by='tau')
+            if not subset.empty and not any(phys in dataset.lower() for phys in physical_datasets):
+                plt.plot(subset['tau'], subset['Normalized MSE SCD'], label=f"{dataset}, delta_t={delta_t}")
+
+    plt.title("Normalized MSE vs Tau (Virtual Datasets - SCDModel MSE)")
+    plt.xlabel("Tau")
+    plt.ylabel("Normalized MSE")
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.grid(axis='x', linestyle='--', color='gray', linewidth=0.7, alpha=0.7)
+    plt.tight_layout()
+    plt.show()
+
+
+
+
+# Use the function
+# plot_normalized_mse()
 
 def geo_mean(iterable):
     a = np.array(iterable, dtype=np.float64)

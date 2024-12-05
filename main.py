@@ -15,8 +15,8 @@ warnings.filterwarnings("ignore", category=UserWarning, module="sklearn.linear_m
 # Parameter definitions
 delta_ts_physical = [10 * M, 30 * M, 1 * H]
 delta_ts_virtual = [1 * H, 1 * D, 3 * D]
-taus = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 3, 3.5, 4, 4.5, 5]
-Ls = [1 / 2]
+taus = [0.5, 1, 1.5, 2, 3, 5]
+Ls = [1, 3, 5, 10, 20]
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -35,7 +35,7 @@ def load_completed_tasks():
         reader = csv.DictReader(file)
         for row in reader:
             completed_tasks.add((row["Dataset name"], int(row["delta_t"]), float(row["tau"]), float(row["L"])))
-    logging.info(f"Loaded {len(completed_tasks)} completed tasks.")
+            logging.info(f"Loaded completed task: {row['Dataset name']} - delta_t: {row['delta_t']} - tau: {row['tau']} - L: {row['L']}")
     return completed_tasks
 
 
@@ -59,6 +59,7 @@ def write_results_to_csv(dataset_name, delta_t, tau, L, sd_res, scd_res, scdo_re
                 scd_res['MSE'], scd_res['AUPRC'], scd_res['coefs'],
                 scdo_res['MSE'], scdo_res['AUPRC'], scdo_res['coefs']
             ])
+            logging.info(f"Writing to CSV: {dataset_name} - delta_t: {delta_t} - tau: {tau} - L: {L}")
     except Exception as e:
         logging.error(f"Error writing to CSV file: {e}")
 
@@ -68,13 +69,8 @@ def search_task(dataset_name, data, delta_t, tau, L, G):
     Perform a single search task and save the results.
     """
     try:
-        print(f"Processing {dataset_name} with delta_t: {delta_t}, tau: {tau}, L: {L}")
         base_score = base_model_no_fit(data, L)
         sd_score, scd_score, scdo_score = model_fit(data, tau, L, G)
-        logging.info(
-            f"{dataset_name} | delta_t: {delta_t} | tau: {tau}, L: {L} | "
-            f"sd: {sd_score['MSE']}, scd: {scd_score['MSE']}, scdo: {scdo_score['MSE']}"
-        )
         write_results_to_csv(
             dataset_name, delta_t, tau, L,
             sd_score, scd_score, scdo_score, base_score
@@ -120,7 +116,6 @@ def main():
             task = futures[future]
             try:
                 future.result()  # Block until the future is completed
-                logging.info(f"Task completed: {task}")
             except Exception as e:
                 logging.error(f"Error occurred during task {task}: {e}")
 

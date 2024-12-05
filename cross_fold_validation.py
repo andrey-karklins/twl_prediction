@@ -83,7 +83,8 @@ def base_model_no_fit(data, L, threshold=300):
     # Transpose data to (T, M) format for processing (time steps first)
     data = data.T
     T = data.shape[0]
-    L = int(T * L)
+    if L < 1:
+        L = int(T * L)
 
     # Determine prediction indices
     indices = find_indices(T, L, threshold)
@@ -117,8 +118,9 @@ def model_fit(data, tau, L, G_global, threshold=300):
     # Transpose data to (T, M) format (time steps first)
     data = data.T
     T = data.shape[0]
-    L = int(T * L)
-    # Determine prediction indices
+    if L < 1:
+        L = int(T * L)
+        # Determine prediction indices
     indices = find_indices(T, L, threshold)
 
     # Initialize SDModel, SCDModel, and SCDOModel
