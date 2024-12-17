@@ -19,6 +19,7 @@ datasets_virtual = [
 delta_ts_physical = [10 * M, 30 * M, 1 * H]
 delta_ts_virtual = [1 * H, 1 * D, 3 * D]
 
+
 # Function to calculate and write aggregated properties
 def get_aggregated_properties(matrix, global_G, dataset_name, delta_t, output_file):
     num_snapshots = matrix.shape[1]  # Number of time intervals
@@ -90,16 +91,17 @@ def write_to_csv(output_file, results):
 
 
 # Function to aggregate data for datasets and delta_t
-def aggregate_data(datasets, delta_ts, output_file):
-    for dataset in datasets:
-        for delta_t in delta_ts:
-            # Apply the new aggregate_to_matrix function
-            matrix, global_G = aggregate_to_matrix(dataset, delta_t=delta_t)
+def aggregate_data(output_file='results/aggregated_properties.csv'):
+    tasks = []
+    for dataset in datasets_physical:
+        for delta_t in delta_ts_physical:
+            data, G = aggregate_to_matrix(dataset, delta_t)
+            tasks.append((data, G, dataset.name, delta_t))
+    for dataset in datasets_virtual:
+        for delta_t in delta_ts_virtual:
+            data, G = aggregate_to_matrix(dataset, delta_t)
+            tasks.append((data, G, dataset.name, delta_t))
+    for data, G, dataset_name, delta_t in tasks:
+        get_aggregated_properties(data, G, dataset_name, delta_t, output_file)
 
-            # Get the aggregated properties and write them to the CSV file
-            get_aggregated_properties(matrix, global_G, dataset.name, delta_t, output_file)
-
-# # Example usage:
-# # Aggregating data for physical datasets and virtual datasets
-# aggregate_data(datasets_physical, delta_ts_physical, "results/physical_datasets_output.csv")
-# aggregate_data(datasets_virtual, delta_ts_virtual, "results/virtual_datasets_output.csv")
+aggregate_data()

@@ -15,8 +15,8 @@ warnings.filterwarnings("ignore", category=UserWarning, module="sklearn.linear_m
 # Parameter definitions
 delta_ts_physical = [10 * M, 30 * M, 1 * H]
 delta_ts_virtual = [1 * H, 1 * D, 3 * D]
-taus = [0.5, 1, 1.5, 2, 3, 5]
-Ls = [1, 3, 5, 10, 20]
+taus = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.25, 4.5, 4.75, 5]
+Ls = [10]
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

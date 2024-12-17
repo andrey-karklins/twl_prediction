@@ -2,9 +2,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from utils import seconds_to_human_readable
+from get_data import *
+from utils import *
 
-
+datasets_physical = [
+        load_or_fetch_dataset(get_hypertext, 'pickles/hypertext.pkl'),
+        load_or_fetch_dataset(get_SFHH, 'pickles/SFHH.pkl')
+    ]
+datasets_virtual = [
+    load_or_fetch_dataset(get_college_1, 'pickles/college_1.pkl'),
+    load_or_fetch_dataset(get_college_2, 'pickles/college_2.pkl'),
+    load_or_fetch_dataset(get_socio_calls, 'pickles/socio_calls.pkl'),
+    load_or_fetch_dataset(get_socio_sms, 'pickles/socio_sms.pkl')
+]
+delta_ts_physical = [10 * M, 30 * M, 1 * H]
+delta_ts_virtual = [1 * H, 1 * D, 3 * D]
 def plot_comparison_grid(results_csv):
     # Read the CSV file into a DataFrame
     df = pd.read_csv(results_csv)
@@ -109,9 +121,9 @@ def plot_comparison_grid(results_csv):
         plt.suptitle(f'Comparison of {metric} Across Different Datasets and Delta_t Values', fontsize=16)
         plt.show()
 
-def find_best_results():
+def find_best_results(file_path = 'results/results.csv', output_file_path = 'results/best_results.csv'):
     # Load the CSV file
-    file_path = 'results/results.csv'  # Replace with your file path
+     # Replace with your file path
     data = pd.read_csv(file_path)
 
     # Define the columns for the output
@@ -163,7 +175,97 @@ def find_best_results():
     results_df = pd.DataFrame(results, columns=output_columns)
 
     # Save the results to a CSV file
-    output_file_path = 'results/best_results.csv'  # Replace with your desired output path
     results_df.to_csv(output_file_path, index=False)
 
-find_best_results()
+
+def improvement_table(csv_name):
+    # Load the CSV file
+    df = pd.read_csv(csv_name)  # Load without headers as we access by index
+
+    # Calculate percentage improvements between models for each row using specified indices
+    # Improvement of SD compared to Baseline
+    df['Improvement_Baseline_to_SD'] = ((df["Baseline MSE"] - df["SDModel MSE"]) / df["Baseline MSE"]) * 100
+
+    # Improvement of SCD compared to SD and Baseline
+    df['Improvement_SD_to_SCD'] = ((df["SDModel MSE"] - df["SCDModel MSE"]) / df["SDModel MSE"]) * 100
+    df['Improvement_Baseline_to_SCD'] = ((df["Baseline MSE"] - df["SCDModel MSE"]) / df["Baseline MSE"]) * 100
+
+    # Improvement of SCDO compared to SCD, SD, and Baseline
+    df['Improvement_SCD_to_SCDO'] = ((df["SCDModel MSE"] - df["SCDOModel MSE"]) / df["SCDModel MSE"]) * 100
+    df['Improvement_SD_to_SCDO'] = ((df["SDModel MSE"] - df["SCDOModel MSE"]) / df["SDModel MSE"]) * 100
+    df['Improvement_Baseline_to_SCDO'] = ((df["Baseline MSE"] - df["SCDOModel MSE"]) / df["Baseline MSE"]) * 100
+
+    # Calculate the average improvement for each step across all rows
+    avg_improvements = {
+        'Baseline to SD': str(round(df['Improvement_Baseline_to_SD'].mean(), 2)) + "%",
+        'Baseline to SCD': str(round(df['Improvement_Baseline_to_SCD'].mean(), 2)) + "%",
+        'Baseline to SCDO': str(round(df['Improvement_Baseline_to_SCDO'].mean(), 2)) + "%",
+        'SD to SCD': str(round(df['Improvement_SD_to_SCD'].mean(), 2)) + "%",
+        'SD to SCDO': str(round(df['Improvement_SD_to_SCDO'].mean(), 2)) + "%",
+        'SCD to SCDO': str(round(df['Improvement_SCD_to_SCDO'].mean(), 2)) + "%"
+    }
+
+    # Write the LaTeX table to a text file
+    with open("tmp.txt", "w") as file:
+        for key, value in avg_improvements.items():
+            file.write(f"{key} & {value} \\\\\n")
+
+
+def autocorrelate_all_table(csv_name):
+    # Load the CSV file
+    df = pd.read_csv(csv_name)
+    df = break_down_coefs(df, 'SCDModel')
+    # plot heatmap
+    plt.figure(figsize=(10, 10))
+    sns.heatmap(df.corr(method='pearson'), annot=True, cmap="coolwarm", fmt=".2f", square=True)
+    plt.show()
+
+
+def autocorrelate_table(csv_name):
+    # Load the CSV file
+    df = pd.read_csv(csv_name)
+
+    # Safely evaluate each entry in 'SCDModel coefs' and 'SCDOModel coefs' columns as a tuple/list
+    df['SCDModel coefs'] = df['SCDModel coefs'].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
+    df['SCDOModel coefs'] = df['SCDOModel coefs'].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
+
+    # Breakdown coefficient columns into separate columns
+    df[['SCD_beta1', 'SCD_beta2', 'SCD_beta3']] = pd.DataFrame(df['SCDModel coefs'].tolist(), index=df.index)
+    df[['SCDO_beta1', 'SCDO_beta2', 'SCDO_beta3']] = pd.DataFrame(df['SCDOModel coefs'].tolist(), index=df.index)
+
+    # Drop the original coefficient columns
+    df = df.drop(columns=['SCDModel coefs', 'SCDOModel coefs'])
+
+    # Select only the columns of interest
+    properties = ['delta_t', 'transitivity', 'average_clustering', 'mean_common_neighbors', 'mean_distinct_neighbors']
+    scd_betas = ['SCD_beta1', 'SCD_beta2', 'SCD_beta3', "SCDModel MSE", "SCDModel AUPRC"]
+    scdo_betas = ['SCDO_beta1', 'SCDO_beta2', 'SCDO_beta3', "SCDOModel MSE", "SCDOModel AUPRC"]
+    df_subset = df[properties + scd_betas + scdo_betas]
+
+    # Calculate the correlation matrix for the selected columns
+    correlations = df_subset.corr(method='pearson')
+
+    # Filter the correlation matrix for SCD and SCDO separately
+    correlations_scd = correlations.loc[properties, scd_betas]
+    correlations_scdo = correlations.loc[properties, scdo_betas]
+
+    # Rename columns and rows for LaTeX-style formatting
+    correlations_scd.columns = [r'$\beta_1$', r'$\beta_2$', r'$\beta_3$', 'MSE', 'AUPRC']
+    correlations_scdo.columns = [r'$\beta_1$', r'$\beta_2$', r'$\beta_3$', 'MSE', 'AUPRC']
+    correlations_scd.index = [r'$\Delta t$', 'Transitivity', 'Average Clustering', r'$\mu_{common}$',
+                              r'$\mu_{distinct}$']
+    correlations_scdo.index = [r'$\Delta t$', 'Transitivity', 'Average Clustering', r'$\mu_{common}$',
+                               r'$\mu_{distinct}$']
+
+    # Plot correlation heatmap for SCD betas
+    plt.figure(figsize=(6, 6))
+    sns.heatmap(correlations_scd, annot=True, cmap="coolwarm", fmt=".2f", square=True)
+    plt.show()
+
+    # Plot correlation heatmap for SCDO betas
+    plt.figure(figsize=(6, 6))
+    sns.heatmap(correlations_scdo, annot=True, cmap="coolwarm", fmt=".2f", square=True)
+    plt.show()
+
+# autocorrelate_all_table('results/results_grid.csv')
+# find_best_results("results/results_L10.csv", "results/best_results_L10.csv")
