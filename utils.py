@@ -295,4 +295,4 @@ def geo_mean(iterable):
     # Use log transformation to avoid overflow, then take the mean
     return np.exp(np.mean(np.log(a)))
 
-plot_normalized_mse('results/results_L2.csv')
+# plot_normalized_mse('results/results_L2.csv')

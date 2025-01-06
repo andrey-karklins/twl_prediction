@@ -33,16 +33,18 @@ def get_aggregated_properties(matrix, global_G, dataset_name, delta_t, output_fi
     avg_interactions_per_snapshot = np.mean(interactions_per_snapshot / interactions_per_snapshot.sum())
     std_interactions_per_snapshot = np.std(interactions_per_snapshot / interactions_per_snapshot.sum())
 
-    # Calculate mean common and distinct neighbours
-    sum_common_neighbours = 0
-    for e in global_G.common_neighbor_geometric_cache:
-        sum_common_neighbours += len(global_G.common_neighbor_geometric_cache[e])
-    mean_common_neighbours = sum_common_neighbours / len(global_G.common_neighbor_geometric_cache)
-    sum_distinct_neighbours = 0
-    for e in global_G.neighbor_edges_cache_1:
-        sum_distinct_neighbours += len(global_G.neighbor_edges_cache_1[e])
-        sum_distinct_neighbours += len(global_G.neighbor_edges_cache_2[e])
-    mean_distinct_neighbours = sum_distinct_neighbours / len(global_G.neighbor_edges_cache_1)
+    # calculate average transitivity per snapshot
+    clustering_per_snapshot = np.zeros(num_snapshots)
+    transitivity_per_snapshot = np.zeros(num_snapshots)
+    for i in range(num_snapshots):
+        indices = np.where(matrix[:, i] > 0)[0]
+        edges = [global_G.edges_list[j] for j in indices]
+        G = nx.Graph()
+        G.add_edges_from(edges)
+        clustering_per_snapshot[i] = nx.average_clustering(G)
+        transitivity_per_snapshot[i] = nx.transitivity(G)
+    avg_clustering = np.mean(clustering_per_snapshot)
+    avg_transitivity = np.mean(transitivity_per_snapshot)
 
     # Create result dictionary (without total_number_interactions)
     results = {
@@ -53,10 +55,8 @@ def get_aggregated_properties(matrix, global_G, dataset_name, delta_t, output_fi
         "std_percentage_of_links_per_snapshot": round(std_edges_per_snapshot * 100, 2),
         "average_percentage_of_interactions_per_snapshot": round(avg_interactions_per_snapshot * 100, 2),
         "std_percentage_of_interactions_per_snapshot": round(std_interactions_per_snapshot * 100, 2),
-        "average_clustering": nx.average_clustering(nx.Graph(global_G)),
-        "transitivity": nx.transitivity(nx.Graph(global_G)),
-        "mean_common_neighbors": mean_common_neighbours,
-        "mean_distinct_neighbors": mean_distinct_neighbours
+        "average_clustering": avg_clustering,
+        "transitivity": avg_transitivity,
     }
 
     # Write the data to a CSV file
@@ -78,7 +78,7 @@ def write_to_csv(output_file, results):
         fieldnames = ["Dataset name", "delta_t", "total_number_snapshots",
                       "average_percentage_of_links_per_snapshot", "std_percentage_of_links_per_snapshot",
                       "average_percentage_of_interactions_per_snapshot", "std_percentage_of_interactions_per_snapshot",
-                      "transitivity", "average_clustering", "mean_common_neighbors", "mean_distinct_neighbors"]
+                      "transitivity", "average_clustering"]
 
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 

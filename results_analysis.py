@@ -1,23 +1,21 @@
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-
 from get_data import *
 from utils import *
 
-datasets_physical = [
+
+def plot_comparison_grid(results_csv):
+    datasets_physical = [
         load_or_fetch_dataset(get_hypertext, 'pickles/hypertext.pkl'),
         load_or_fetch_dataset(get_SFHH, 'pickles/SFHH.pkl')
     ]
-datasets_virtual = [
-    load_or_fetch_dataset(get_college_1, 'pickles/college_1.pkl'),
-    load_or_fetch_dataset(get_college_2, 'pickles/college_2.pkl'),
-    load_or_fetch_dataset(get_socio_calls, 'pickles/socio_calls.pkl'),
-    load_or_fetch_dataset(get_socio_sms, 'pickles/socio_sms.pkl')
-]
-delta_ts_physical = [10 * M, 30 * M, 1 * H]
-delta_ts_virtual = [1 * H, 1 * D, 3 * D]
-def plot_comparison_grid(results_csv):
+    datasets_virtual = [
+        load_or_fetch_dataset(get_college_1, 'pickles/college_1.pkl'),
+        load_or_fetch_dataset(get_college_2, 'pickles/college_2.pkl'),
+        load_or_fetch_dataset(get_socio_calls, 'pickles/socio_calls.pkl'),
+        load_or_fetch_dataset(get_socio_sms, 'pickles/socio_sms.pkl')
+    ]
+    delta_ts_physical = [10 * M, 30 * M, 1 * H]
+    delta_ts_virtual = [1 * H, 1 * D, 3 * D]
+
     # Read the CSV file into a DataFrame
     df = pd.read_csv(results_csv)
 
@@ -121,9 +119,10 @@ def plot_comparison_grid(results_csv):
         plt.suptitle(f'Comparison of {metric} Across Different Datasets and Delta_t Values', fontsize=16)
         plt.show()
 
-def find_best_results(file_path = 'results/results.csv', output_file_path = 'results/best_results.csv'):
+
+def find_best_results(file_path='results/results.csv', output_file_path='results/best_results.csv'):
     # Load the CSV file
-     # Replace with your file path
+    # Replace with your file path
     data = pd.read_csv(file_path)
 
     # Define the columns for the output
@@ -211,13 +210,31 @@ def improvement_table(csv_name):
             file.write(f"{key} & {value} \\\\\n")
 
 
-def autocorrelate_all_table(csv_name):
-    # Load the CSV file
-    df = pd.read_csv(csv_name)
+def autocorrelate_all_table(data_csv_names, dataset_properties_csv_name):
+    # Load the CSV files and combine them
+    df = pd.concat([pd.read_csv(csv_name) for csv_name in data_csv_names], ignore_index=True)
     df = break_down_coefs(df, 'SCDModel')
-    # plot heatmap
-    plt.figure(figsize=(10, 10))
-    sns.heatmap(df.corr(method='pearson'), annot=True, cmap="coolwarm", fmt=".2f", square=True)
+    df = break_down_coefs(df, 'SCDOModel')
+
+    # Load the dataset properties CSV file
+    df_properties = pd.read_csv(dataset_properties_csv_name)
+
+    df = pd.merge(df, df_properties, on=['Dataset name', 'delta_t'])
+
+    # Extract dataset properties column names
+    dataset_properties_cols = df_properties.columns.difference(['Dataset name', 'delta_t']).tolist()
+    dataset_properties_cols.extend(['tau', 'L'])
+
+    # Remove unnecessary columns
+    df = df.drop(columns=['Dataset name', 'delta_t'])
+
+    # Compute the correlation of dataset_properties columns with all other columns
+    correlation_df = df.corr(method='pearson').loc[dataset_properties_cols]
+
+    # Plot heatmap
+    plt.figure(figsize=(16, len(dataset_properties_cols)))
+    sns.heatmap(correlation_df, annot=True, cmap="coolwarm", fmt=".2f", square=True)
+    plt.title("Correlation of Dataset Properties with All Columns")
     plt.show()
 
 
@@ -267,5 +284,7 @@ def autocorrelate_table(csv_name):
     sns.heatmap(correlations_scdo, annot=True, cmap="coolwarm", fmt=".2f", square=True)
     plt.show()
 
-# autocorrelate_all_table('results/results_grid.csv')
+
+autocorrelate_all_table(['results/results_grid.csv', 'results/results_L2.csv', 'results/results_L10.csv'],
+                        'results/aggregated_properties.csv')
 # find_best_results("results/results_L10.csv", "results/best_results_L10.csv")
