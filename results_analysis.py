@@ -223,7 +223,7 @@ def autocorrelate_all_table(data_csv_names, dataset_properties_csv_name):
 
     # Extract dataset properties column names
     dataset_properties_cols = df_properties.columns.difference(['Dataset name', 'delta_t']).tolist()
-    dataset_properties_cols.extend(['tau', 'L'])
+    dataset_properties_cols.extend([x + " " + y for x in ["SDModel", "SCDModel", "SCDOModel"] for y in ["L", "tau"]])
 
     # Remove unnecessary columns
     df = df.drop(columns=['Dataset name', 'delta_t'])
@@ -285,6 +285,6 @@ def autocorrelate_table(csv_name):
     plt.show()
 
 
-autocorrelate_all_table(['results/results_grid.csv', 'results/results_L2.csv', 'results/results_L10.csv'],
+autocorrelate_all_table(['results/best_results_grid.csv'],
                         'results/aggregated_properties.csv')
 # find_best_results("results/results_L10.csv", "results/best_results_L10.csv")

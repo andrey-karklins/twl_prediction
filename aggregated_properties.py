@@ -30,8 +30,18 @@ def get_aggregated_properties(matrix, global_G, dataset_name, delta_t, output_fi
     # Calculate averages and standard deviations
     avg_edges_per_snapshot = np.mean(edges_per_snapshot / all_edges)  # Percentage of edges per snapshot
     std_edges_per_snapshot = np.std(edges_per_snapshot / all_edges)
-    avg_interactions_per_snapshot = np.mean(interactions_per_snapshot / interactions_per_snapshot.sum())
-    std_interactions_per_snapshot = np.std(interactions_per_snapshot / interactions_per_snapshot.sum())
+
+    # For every snapshot, calculate the weighted interaction entropy
+    # Formula: - sum(p * log(p)) for each edge weight p
+    weighted_interaction_entropy = np.zeros(num_snapshots)
+    for i in range(num_snapshots):
+        weighted_interaction_entropy[i] = -np.sum(
+            (matrix[:, i] / interactions_per_snapshot[i]) * np.log(matrix[:, i] / interactions_per_snapshot[i])
+        )
+
+    avg_weighted_interaction_entropy = np.mean(weighted_interaction_entropy)
+    std_edges_per_snapshot = np.std(weighted_interaction_entropy)
+
 
     # calculate average transitivity per snapshot
     clustering_per_snapshot = np.zeros(num_snapshots)
@@ -53,8 +63,8 @@ def get_aggregated_properties(matrix, global_G, dataset_name, delta_t, output_fi
         "total_number_snapshots": num_snapshots,  # Changed to total number of snapshots
         "average_percentage_of_links_per_snapshot": round(avg_edges_per_snapshot * 100, 2),
         "std_percentage_of_links_per_snapshot": round(std_edges_per_snapshot * 100, 2),
-        "average_percentage_of_interactions_per_snapshot": round(avg_interactions_per_snapshot * 100, 2),
-        "std_percentage_of_interactions_per_snapshot": round(std_interactions_per_snapshot * 100, 2),
+        "average_weighted_interaction_entropy": round(avg_weighted_interaction_entropy * 100, 2),
+        "std_weighted_interaction_entropy": round(std_edges_per_snapshot * 100, 2),
         "average_clustering": avg_clustering,
         "transitivity": avg_transitivity,
     }
@@ -77,7 +87,7 @@ def write_to_csv(output_file, results):
     with open(output_file, 'a', newline='') as csvfile:
         fieldnames = ["Dataset name", "delta_t", "total_number_snapshots",
                       "average_percentage_of_links_per_snapshot", "std_percentage_of_links_per_snapshot",
-                      "average_percentage_of_interactions_per_snapshot", "std_percentage_of_interactions_per_snapshot",
+                      "average_weighted_interaction_entropy", "std_weighted_interaction_entropy",
                       "transitivity", "average_clustering"]
 
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
