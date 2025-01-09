@@ -35,13 +35,11 @@ def get_aggregated_properties(matrix, global_G, dataset_name, delta_t, output_fi
     # Formula: - sum(p * log(p)) for each edge weight p
     weighted_interaction_entropy = np.zeros(num_snapshots)
     for i in range(num_snapshots):
-        weighted_interaction_entropy[i] = -np.sum(
-            (matrix[:, i] / interactions_per_snapshot[i]) * np.log(matrix[:, i] / interactions_per_snapshot[i])
-        )
+        p = matrix[:, i] / interactions_per_snapshot[i]
+        weighted_interaction_entropy[i] = -np.nansum(p * np.log(p))
 
     avg_weighted_interaction_entropy = np.mean(weighted_interaction_entropy)
-    std_edges_per_snapshot = np.std(weighted_interaction_entropy)
-
+    std_weighted_interaction_entropy = np.std(weighted_interaction_entropy)
 
     # calculate average transitivity per snapshot
     clustering_per_snapshot = np.zeros(num_snapshots)
@@ -64,7 +62,7 @@ def get_aggregated_properties(matrix, global_G, dataset_name, delta_t, output_fi
         "average_percentage_of_links_per_snapshot": round(avg_edges_per_snapshot * 100, 2),
         "std_percentage_of_links_per_snapshot": round(std_edges_per_snapshot * 100, 2),
         "average_weighted_interaction_entropy": round(avg_weighted_interaction_entropy * 100, 2),
-        "std_weighted_interaction_entropy": round(std_edges_per_snapshot * 100, 2),
+        "std_weighted_interaction_entropy": round(std_weighted_interaction_entropy * 100, 2),
         "average_clustering": avg_clustering,
         "transitivity": avg_transitivity,
     }
@@ -113,5 +111,6 @@ def aggregate_data(output_file='results/aggregated_properties.csv'):
             tasks.append((data, G, dataset.name, delta_t))
     for data, G, dataset_name, delta_t in tasks:
         get_aggregated_properties(data, G, dataset_name, delta_t, output_file)
+
 
 aggregate_data()

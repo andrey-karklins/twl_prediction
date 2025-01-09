@@ -232,59 +232,47 @@ def autocorrelate_all_table(data_csv_names, dataset_properties_csv_name):
     correlation_df = df.corr(method='pearson').loc[dataset_properties_cols]
 
     # Plot heatmap
-    plt.figure(figsize=(16, len(dataset_properties_cols)))
+    plt.figure(figsize=(24, len(dataset_properties_cols)))
     sns.heatmap(correlation_df, annot=True, cmap="coolwarm", fmt=".2f", square=True)
     plt.title("Correlation of Dataset Properties with All Columns")
     plt.show()
 
 
-def autocorrelate_table(csv_name):
-    # Load the CSV file
-    df = pd.read_csv(csv_name)
+def autocorrelate_table(data_csv_names, dataset_properties_csv_name):
+    # Load the CSV files and combine them
+    df = pd.concat([pd.read_csv(csv_name) for csv_name in data_csv_names], ignore_index=True)
+    df = break_down_coefs(df, 'SCDModel')
 
-    # Safely evaluate each entry in 'SCDModel coefs' and 'SCDOModel coefs' columns as a tuple/list
-    df['SCDModel coefs'] = df['SCDModel coefs'].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
-    df['SCDOModel coefs'] = df['SCDOModel coefs'].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
+    # Load the dataset properties CSV file
+    df_properties = pd.read_csv(dataset_properties_csv_name)
 
-    # Breakdown coefficient columns into separate columns
-    df[['SCD_beta1', 'SCD_beta2', 'SCD_beta3']] = pd.DataFrame(df['SCDModel coefs'].tolist(), index=df.index)
-    df[['SCDO_beta1', 'SCDO_beta2', 'SCDO_beta3']] = pd.DataFrame(df['SCDOModel coefs'].tolist(), index=df.index)
-
-    # Drop the original coefficient columns
-    df = df.drop(columns=['SCDModel coefs', 'SCDOModel coefs'])
+    df = pd.merge(df, df_properties, on=['Dataset name', 'delta_t'])
 
     # Select only the columns of interest
-    properties = ['delta_t', 'transitivity', 'average_clustering', 'mean_common_neighbors', 'mean_distinct_neighbors']
-    scd_betas = ['SCD_beta1', 'SCD_beta2', 'SCD_beta3', "SCDModel MSE", "SCDModel AUPRC"]
-    scdo_betas = ['SCDO_beta1', 'SCDO_beta2', 'SCDO_beta3', "SCDOModel MSE", "SCDOModel AUPRC"]
-    df_subset = df[properties + scd_betas + scdo_betas]
+    properties = ['transitivity', 'average_percentage_of_links_per_snapshot', 'std_weighted_interaction_entropy']
+    scd_betas = ["SCDModel MSE", "SCDModel AUPRC", 'SCDModel coef 1', 'SCDModel coef 2', 'SCDModel coef 3']
+    df_subset = df[properties + scd_betas]
 
     # Calculate the correlation matrix for the selected columns
     correlations = df_subset.corr(method='pearson')
 
     # Filter the correlation matrix for SCD and SCDO separately
     correlations_scd = correlations.loc[properties, scd_betas]
-    correlations_scdo = correlations.loc[properties, scdo_betas]
 
     # Rename columns and rows for LaTeX-style formatting
-    correlations_scd.columns = [r'$\beta_1$', r'$\beta_2$', r'$\beta_3$', 'MSE', 'AUPRC']
-    correlations_scdo.columns = [r'$\beta_1$', r'$\beta_2$', r'$\beta_3$', 'MSE', 'AUPRC']
-    correlations_scd.index = [r'$\Delta t$', 'Transitivity', 'Average Clustering', r'$\mu_{common}$',
-                              r'$\mu_{distinct}$']
-    correlations_scdo.index = [r'$\Delta t$', 'Transitivity', 'Average Clustering', r'$\mu_{common}$',
-                               r'$\mu_{distinct}$']
+    correlations_scd.columns = [ 'MSE', 'AUPRC', r'$\beta_1$', r'$\beta_2$', r'$\beta_3$']
+    correlations_scd.index = [
+        'Transitivity',
+        r'$\mu_{\% \text{ of active links}}$',
+        r'$\sigma_{\text{interaction entropy}}$'
+    ]
 
     # Plot correlation heatmap for SCD betas
-    plt.figure(figsize=(6, 6))
+    plt.figure(figsize=(10, 8))
     sns.heatmap(correlations_scd, annot=True, cmap="coolwarm", fmt=".2f", square=True)
     plt.show()
 
-    # Plot correlation heatmap for SCDO betas
-    plt.figure(figsize=(6, 6))
-    sns.heatmap(correlations_scdo, annot=True, cmap="coolwarm", fmt=".2f", square=True)
-    plt.show()
 
-
-autocorrelate_all_table(['results/best_results_grid.csv'],
-                        'results/aggregated_properties.csv')
-# find_best_results("results/results_L10.csv", "results/best_results_L10.csv")
+# autocorrelate_table(['results/best_results_grid.csv'],
+#                         'results/aggregated_properties.csv')
+improvement_table('results/best_results_grid.csv')
