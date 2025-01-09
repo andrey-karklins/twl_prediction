@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 from get_data import *
 from utils import *
 
@@ -270,9 +272,9 @@ def autocorrelate_table(data_csv_names, dataset_properties_csv_name):
     # Plot correlation heatmap for SCD betas
     plt.figure(figsize=(10, 8))
     sns.heatmap(correlations_scd, annot=True, cmap="coolwarm", fmt=".2f", square=True)
+    plt.savefig('results/plots/correlation_heatmap.png')
     plt.show()
 
 
-# autocorrelate_table(['results/best_results_grid.csv'],
-#                         'results/aggregated_properties.csv')
-improvement_table('results/best_results_grid.csv')
+autocorrelate_table(['results/best_results_grid.csv'],
+                        'results/aggregated_properties.csv')

@@ -74,8 +74,10 @@ def results_table(csv_name):
     # Load the data
     data = pd.read_csv(csv_name)
     data = data.drop(columns=remove_columns)
+
     data['Dataset name'] = pd.Categorical(data['Dataset name'], categories=dataset_order, ordered=True)
-    data = data.sort_values('Dataset name')
+    data['delta_t'] = data['delta_t'].astype(int)
+    data = data.sort_values(['Dataset name', 'delta_t'])
 
     formatted_rows_final_with_backslashes = []
 
@@ -136,7 +138,8 @@ def params_table(csv_name):
     data = pd.read_csv(csv_name)
     data = data.drop(columns=remove_columns)
     data['Dataset name'] = pd.Categorical(data['Dataset name'], categories=dataset_order, ordered=True)
-    data = data.sort_values('Dataset name')
+    data['delta_t'] = data['delta_t'].astype(int)
+    data = data.sort_values(['Dataset name', 'delta_t'])
 
     formatted_rows_final_with_backslashes = []
 
@@ -186,7 +189,7 @@ def params_table(csv_name):
             file.write(row + "\n")
 
 
-def plot_normalized_mse(file_path='results/results_L2.csv'):
+def plot_normalized_mse(file_path='results/results_L10.csv'):
     # Load the dataset
     data = pd.read_csv(file_path)
 
@@ -254,7 +257,6 @@ def plot_normalized_mse(file_path='results/results_L2.csv'):
 
     # Plot for tau < 5
     plot_scd_normalized(best_tau['tau < 5'], "Best tau < 3")
-
     # Plot for tau >= 5
     plot_scd_normalized(~best_tau['tau < 5'], "Best tau >= 3")
 
@@ -294,5 +296,3 @@ def geo_mean(iterable):
 
     # Use log transformation to avoid overflow, then take the mean
     return np.exp(np.mean(np.log(a)))
-
-# plot_normalized_mse('results/results_L2.csv')
