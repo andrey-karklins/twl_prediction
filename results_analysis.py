@@ -250,13 +250,15 @@ def autocorrelate_table(data_csv_names, dataset_properties_csv_name):
 
     df = pd.merge(df, df_properties, on=['Dataset name', 'delta_t'])
 
+    df['SCDModel MSE'] = df['SCDModel MSE'] / (df["average_edge_weight"] ** 2)
+
     # Select only the columns of interest
-    properties = ['transitivity', 'average_percentage_of_links_per_snapshot', 'std_weighted_interaction_entropy']
+    properties = ['average_clustering', 'average_percentage_of_links_per_snapshot', 'average_weighted_interaction_entropy']
     scd_betas = ["SCDModel MSE", "SCDModel AUPRC", 'SCDModel coef 1', 'SCDModel coef 2', 'SCDModel coef 3']
     df_subset = df[properties + scd_betas]
 
     # Calculate the correlation matrix for the selected columns
-    correlations = df_subset.corr(method='pearson')
+    correlations = df_subset.corr(method='spearman')
 
     # Filter the correlation matrix for SCD and SCDO separately
     correlations_scd = correlations.loc[properties, scd_betas]
@@ -264,9 +266,9 @@ def autocorrelate_table(data_csv_names, dataset_properties_csv_name):
     # Rename columns and rows for LaTeX-style formatting
     correlations_scd.columns = [ 'MSE', 'AUPRC', r'$\beta_1$', r'$\beta_2$', r'$\beta_3$']
     correlations_scd.index = [
-        'Transitivity',
+        r'$\mu_{clustering coefficient}$',
         r'$\mu_{\% \text{ of active links}}$',
-        r'$\sigma_{\text{interaction entropy}}$'
+        r'$\mu_{\text{interaction entropy}}$'
     ]
 
     # Plot correlation heatmap for SCD betas
@@ -276,5 +278,31 @@ def autocorrelate_table(data_csv_names, dataset_properties_csv_name):
     plt.show()
 
 
+# plot scatterplot of average link weight to mse
+def plot_scatterplot_weight_to_mse(data_csv_name, dataset_properties_csv_name):
+    # Load the CSV files
+    df = pd.read_csv(data_csv_name)
+    df_properties = pd.read_csv(dataset_properties_csv_name)
+
+    # Merge the two dataframes on 'Dataset name' and 'delta_t'
+    df = pd.merge(df, df_properties, on=['Dataset name', 'delta_t'])
+
+    df['SCDModel MSE'] = df['SCDModel MSE'] / (df["average_edge_weight"] ** 2)
+
+    # fit a line to the data
+    sns.lmplot(data=df, x='average_edge_weight', y='SCDModel MSE', height=6.5, aspect=1.5)
+
+    # Plot a scatterplot of average edge weight vs. SCDModel MSE
+    sns.scatterplot(data=df, x='average_edge_weight', y='SCDModel MSE')
+
+    plt.xlabel('Average Edge Weight')
+    plt.ylabel('Normalized SCDModel MSE')
+    plt.savefig('results/plots/weight_vs_mse_normalized.png')
+    plt.show()
+
+
+
 autocorrelate_table(['results/best_results_grid.csv'],
                         'results/aggregated_properties.csv')
+
+# plot_scatterplot_weight_to_mse('results/best_results_grid.csv', 'results/aggregated_properties.csv')

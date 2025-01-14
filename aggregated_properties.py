@@ -27,6 +27,8 @@ def get_aggregated_properties(matrix, global_G, dataset_name, delta_t, output_fi
     edges_per_snapshot = np.count_nonzero(matrix, axis=0)  # Count of active edges per snapshot
     interactions_per_snapshot = matrix.sum(axis=0)  # Total interactions (edge weights) per snapshot
 
+    average_edge_weight = np.mean(interactions_per_snapshot / len(global_G.edges_list))
+
     # Calculate averages and standard deviations
     avg_edges_per_snapshot = np.mean(edges_per_snapshot / all_edges)  # Percentage of edges per snapshot
     std_edges_per_snapshot = np.std(edges_per_snapshot / all_edges)
@@ -49,10 +51,10 @@ def get_aggregated_properties(matrix, global_G, dataset_name, delta_t, output_fi
         edges = [global_G.edges_list[j] for j in indices]
         G = nx.Graph()
         G.add_edges_from(edges)
-        clustering_per_snapshot[i] = nx.average_clustering(G)
+        clustering_per_snapshot[i] = nx.average_clustering(G, weight='weight')
         transitivity_per_snapshot[i] = nx.transitivity(G)
+
     avg_clustering = np.mean(clustering_per_snapshot)
-    avg_transitivity = np.mean(transitivity_per_snapshot)
 
     # Create result dictionary (without total_number_interactions)
     results = {
@@ -63,8 +65,8 @@ def get_aggregated_properties(matrix, global_G, dataset_name, delta_t, output_fi
         "std_percentage_of_links_per_snapshot": round(std_edges_per_snapshot * 100, 2),
         "average_weighted_interaction_entropy": round(avg_weighted_interaction_entropy * 100, 2),
         "std_weighted_interaction_entropy": round(std_weighted_interaction_entropy * 100, 2),
+        "average_edge_weight": average_edge_weight,
         "average_clustering": avg_clustering,
-        "transitivity": avg_transitivity,
     }
 
     # Write the data to a CSV file
@@ -86,7 +88,7 @@ def write_to_csv(output_file, results):
         fieldnames = ["Dataset name", "delta_t", "total_number_snapshots",
                       "average_percentage_of_links_per_snapshot", "std_percentage_of_links_per_snapshot",
                       "average_weighted_interaction_entropy", "std_weighted_interaction_entropy",
-                      "transitivity", "average_clustering"]
+                      "average_clustering", "average_edge_weight"]
 
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
