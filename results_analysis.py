@@ -266,9 +266,9 @@ def autocorrelate_table(data_csv_names, dataset_properties_csv_name):
     # Rename columns and rows for LaTeX-style formatting
     correlations_scd.columns = [ 'MSE', 'AUPRC', r'$\beta_1$', r'$\beta_2$', r'$\beta_3$']
     correlations_scd.index = [
-        r'$\mu_{clustering coefficient}$',
-        r'$\mu_{\% \text{ of active links}}$',
-        r'$\mu_{\text{interaction entropy}}$'
+        r'$\mu_{cc}$',
+        r'$\mu_{\text{E}, \%}$',
+        r'$\mu_{\text{H}, \%}$'
     ]
 
     # Plot correlation heatmap for SCD betas
@@ -302,7 +302,7 @@ def plot_scatterplot_weight_to_mse(data_csv_name, dataset_properties_csv_name):
 
 
 
-autocorrelate_table(['results/best_results_grid.csv'],
-                        'results/aggregated_properties.csv')
+# autocorrelate_table(['results/best_results_grid.csv'],
+#                         'results/aggregated_properties.csv')
 
 # plot_scatterplot_weight_to_mse('results/best_results_grid.csv', 'results/aggregated_properties.csv')

@@ -1,5 +1,7 @@
 import csv
 
+import numpy as np
+
 from get_data import *
 from utils import load_or_fetch_dataset, M, H, D
 
@@ -33,16 +35,19 @@ def get_aggregated_properties(matrix, global_G, dataset_name, delta_t, output_fi
     avg_edges_per_snapshot = np.mean(edges_per_snapshot / all_edges)  # Percentage of edges per snapshot
     std_edges_per_snapshot = np.std(edges_per_snapshot / all_edges)
 
+    # Calculate maximum entropy for normalization
+    max_entropy = np.log(edges_per_snapshot)  # Log of the number of edges
+
     # For every snapshot, calculate the weighted interaction entropy
-    # Formula: - sum(p * log(p)) for each edge weight p
     weighted_interaction_entropy = np.zeros(num_snapshots)
     for i in range(num_snapshots):
+        if np.isnan(max_entropy[i]) or max_entropy[i] == 0:
+            weighted_interaction_entropy[i] = 0
+            continue
         p = matrix[:, i] / interactions_per_snapshot[i]
-        weighted_interaction_entropy[i] = -np.nansum(p * np.log(p))
+        weighted_interaction_entropy[i] = -np.nansum(p * np.log(p)) / max_entropy[i]
 
     avg_weighted_interaction_entropy = np.mean(weighted_interaction_entropy)
-    std_weighted_interaction_entropy = np.std(weighted_interaction_entropy)
-
     # calculate average transitivity per snapshot
     clustering_per_snapshot = np.zeros(num_snapshots)
     transitivity_per_snapshot = np.zeros(num_snapshots)
@@ -63,10 +68,9 @@ def get_aggregated_properties(matrix, global_G, dataset_name, delta_t, output_fi
         "total_number_snapshots": num_snapshots,  # Changed to total number of snapshots
         "average_percentage_of_links_per_snapshot": round(avg_edges_per_snapshot * 100, 2),
         "std_percentage_of_links_per_snapshot": round(std_edges_per_snapshot * 100, 2),
+        "average_edge_weight": round(average_edge_weight, 2),
         "average_weighted_interaction_entropy": round(avg_weighted_interaction_entropy * 100, 2),
-        "std_weighted_interaction_entropy": round(std_weighted_interaction_entropy * 100, 2),
-        "average_edge_weight": average_edge_weight,
-        "average_clustering": avg_clustering,
+        "average_clustering": round(avg_clustering, 2),
     }
 
     # Write the data to a CSV file
@@ -87,8 +91,7 @@ def write_to_csv(output_file, results):
     with open(output_file, 'a', newline='') as csvfile:
         fieldnames = ["Dataset name", "delta_t", "total_number_snapshots",
                       "average_percentage_of_links_per_snapshot", "std_percentage_of_links_per_snapshot",
-                      "average_weighted_interaction_entropy", "std_weighted_interaction_entropy",
-                      "average_clustering", "average_edge_weight"]
+                      "average_edge_weight", "average_weighted_interaction_entropy", "average_clustering"]
 
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
@@ -115,4 +118,4 @@ def aggregate_data(output_file='results/aggregated_properties.csv'):
         get_aggregated_properties(data, G, dataset_name, delta_t, output_file)
 
 
-aggregate_data()
+# aggregate_data()

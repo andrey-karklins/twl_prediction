@@ -61,6 +61,43 @@ def load_or_fetch_dataset(fetch_func, pickle_filename):
     return dataset
 
 
+def data_analysis_table(csv_name):
+    # Update the formatted output directly in the code with "\\" at the end of each row
+    # Prepare formatted rows with the final formatting as specified
+
+    # Sort by dataset name in specific order:
+    dataset_order = ['Hypertext graph', 'SFHH graph', 'College graph 1', 'College graph 2', 'Socio-calls graph',
+                     'Socio-sms graph']
+
+    # Load the data
+    data = pd.read_csv(csv_name)
+
+    data['Dataset name'] = pd.Categorical(data['Dataset name'], categories=dataset_order, ordered=True)
+    data['delta_t'] = data['delta_t'].astype(int)
+    data = data.sort_values(['Dataset name', 'delta_t'])
+
+    formatted_rows_final_with_backslashes = []
+
+    # Iterate over each row to apply formatting as specified
+    for i, (_, row) in enumerate(data.iterrows()):
+        # Copy the row's values
+        row_values = list(row)
+
+        # Apply multirow formatting every 3 rows for the first column
+        if i % 3 == 0:
+            row_values[0] = f"\\multirow{{3}}{{*}}{{{row_values[0]}}}"
+        else:
+            row_values[0] = ""  # Leave the first column empty for the other 2 rows in each group
+
+        row_values[1] = f"{seconds_to_human_readable(row_values[1])}"
+        # Convert row to " & " separated format and add "\\" at the end
+        formatted_rows_final_with_backslashes.append(' & '.join(map(str, row_values)) + " \\\\")
+
+    # write to txt file
+    with open("results_table.txt", "w") as file:
+        for row in formatted_rows_final_with_backslashes:
+            file.write(row + "\n")
+
 def results_table(csv_name):
     # Update the formatted output directly in the code with "\\" at the end of each row
     # Prepare formatted rows with the final formatting as specified
@@ -122,6 +159,7 @@ def results_table(csv_name):
     with open("results_table.txt", "w") as file:
         for row in formatted_rows_final_with_backslashes:
             file.write(row + "\n")
+
 
 
 def params_table(csv_name):
@@ -296,3 +334,5 @@ def geo_mean(iterable):
 
     # Use log transformation to avoid overflow, then take the mean
     return np.exp(np.mean(np.log(a)))
+
+data_analysis_table('results/aggregated_properties.csv')
