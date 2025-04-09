@@ -335,4 +335,4 @@ def geo_mean(iterable):
     # Use log transformation to avoid overflow, then take the mean
     return np.exp(np.mean(np.log(a)))
 
-data_analysis_table('results/aggregated_properties.csv')
+# data_analysis_table('results/aggregated_properties.csv')
